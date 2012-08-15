@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
 """
-Read two polarization maps and perform the following steps:
+Read a set of Healpix maps and perform the following steps:
 
-1. Difference them
-2. Apply a smoothing filter with FWHM = 2 deg
-3. Degrade the maps down to NSIDE=32
-4. Save the map
+1. Combine them linearly using user-provided weights
+2. Apply a smoothing filter to the result
+3. Degrade the map down to some user-specified NSIDE
+4. Save the result
 """
 
 import matplotlib

@@ -5,9 +5,6 @@ import os.path
 import numpy as np
 import healpy as hp
 
-from planck.Planck import Planck
-
-PLANCK = Planck()
 stokes = "IQU"
 
 class BaseMapReader:

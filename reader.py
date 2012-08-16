@@ -26,7 +26,7 @@ class BaseMapReader:
         nside : None or int
             if None matches any nside, otherwise integer nside
         chtag : string 
-            can be "" for frequency, radiometer("LFI18S"), horn("LFI18"), quadruplet("LFI18-LFI23"), detset("detset_1")
+            can be "" for frequency, radiometer("LFI18S"), horn("LFI18"), quadruplet("18_23"), detset("detset_1")
 
         Returns
         -------

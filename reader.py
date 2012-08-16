@@ -49,6 +49,19 @@ class SingleFolderDXReader:
         if len(components) == 1:
             components = components[0]
 
+        # folder
+        folder = self.folder
+
+        # single channel
+        if chtag and chtag.find('_') < 0:
+            # single channels do not have underscores
+            if freq > 70:
+                freq = chtag
+                chtag = ""
+            else:
+                folder = os.path.join(self.folder, "channels")
+                chtag = chtag.translate(None, "LFI") # remove LFI from channel name
+
         # subset tag
         subset_halfring_tag = chtag
         if subset_halfring_tag:
@@ -69,7 +82,7 @@ class SingleFolderDXReader:
             nside_tag = "????"
 
         # read_map
-        filename_pattern = os.path.join(self.folder, "???_%d_%s_????????%s_%s.fits*" % (freq, nside_tag, subset_halfring_tag, surv))
+        filename_pattern = os.path.join(folder, "???_%s_%s_????????%s_%s.fits*" % (str(freq), nside_tag, subset_halfring_tag, surv))
         filename = glob(filename_pattern)
         if len(filename) == 1:
             filename = filename[0]

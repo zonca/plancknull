@@ -27,11 +27,15 @@ class BaseMapReader:
             if None matches any nside, otherwise integer nside
         chtag : string 
             can be "" for frequency, radiometer("LFI18S"), horn("LFI18"), quadruplet("18_23"), detset("detset_1")
+        halfring : int
+            0 for full, 1 and 2 for first and second halfrings
+        pol : string
+            required polarization components, e.g. 'I', 'Q', 'IQU'
 
         Returns
         -------
         maps : array or tuple of arrays
-            maps as returned by healpy.read_map
+            single map or tuple of maps as returned by healpy.read_map
 
         """
         return np.zeros(hp.nside2npix(1024))
@@ -81,5 +85,4 @@ class SingleFolderDXReader:
             raise exceptions.IOError(error_log)
 
         log.info("Reading %s" % os.path.basename(filename))
-        #return hp.read_map(filename, components)
-        return None
+        return hp.read_map(filename, components)

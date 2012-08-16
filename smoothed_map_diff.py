@@ -13,7 +13,7 @@ import matplotlib
 matplotlib.use('AGG')
 
 import numpy as np
-import healpy
+import healpy as hp
 import sys
 import logging as log
 import math
@@ -74,7 +74,7 @@ def validate_parameters(options, args):
         sys.exit(1)
 
     # We want to convert a string of Stokes components like "I,q"
-    # into something recognized by healpy.read_map, i.e. (0, 1).
+    # into something recognized by hp.read_map, i.e. (0, 1).
     # The use of "frozenset" removes duplicates.
     comp = frozenset([x
                       for x in options.stokes_components.upper().split(",")
@@ -148,7 +148,7 @@ def smooth_and_combine_maps(maps_and_weights,
 
             log.info('Applying a smoothing filter to %s map...',
                      component_name[stokes_components[idx]])
-            smoothed_component = healpy.smoothing(diff_component,
+            smoothed_component = hp.smoothing(diff_component,
                                                   sm_angle)
             smoothed_component[nan_mask] = np.NaN
 
@@ -158,10 +158,10 @@ def smooth_and_combine_maps(maps_and_weights,
 
     if degraded_nside > 0:
         log.info('Degrading the map to NSIDE = %d', degraded_nside)
-        degraded_map = healpy.ud_grade(smoothed_map, degraded_nside)
+        degraded_map = hp.ud_grade(smoothed_map, degraded_nside)
 
     log.info('Saving the map into %s', output_file_name)
-    healpy.write_map(output_file_name, degraded_map)
+    hp.write_map(output_file_name, degraded_map)
 
 #####################################################################
 

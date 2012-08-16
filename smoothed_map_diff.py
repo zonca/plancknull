@@ -9,6 +9,9 @@ Read a set of Healpix maps and perform the following steps:
 4. Save the result
 """
 
+# for interactive use maptplotlib should be already 
+# inizialized, so this does not have any effect,
+# as intended.
 import matplotlib
 matplotlib.use('AGG')
 
@@ -19,7 +22,7 @@ import logging as log
 import math
 import itertools
 from optparse import OptionParser
-from map_reader import CachedMapReader
+from cached_map_reader import CachedMapReader
 
 #####################################################################
 

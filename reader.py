@@ -95,4 +95,8 @@ class SingleFolderDXReader(BaseMapReader):
             raise exceptions.IOError(error_log)
 
         log.info("Reading %s" % os.path.basename(filename))
-        return hp.read_map(filename, components)
+        output_map = hp.read_map(filename, components)
+        try:
+            return [hp.ma(m) for m in output_map]
+        except exceptions.TypeError:
+            return hp.ma(output_map)

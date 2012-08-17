@@ -37,7 +37,7 @@ class BaseMapReader:
         """
         return np.zeros(hp.nside2npix(1024))
 
-class SingleFolderDXReader:
+class SingleFolderDXReader(BaseMapReader):
     """All maps in a single folder, DX9 naming convention"""
 
     def __init__(self, folder):

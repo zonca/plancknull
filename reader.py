@@ -47,7 +47,10 @@ class SingleFolderDXReader(BaseMapReader):
         # stokes component
         components = [stokes.index(p) for p in pol]
         if len(components) == 1:
+            is_IQU = False
             components = components[0]
+        else:
+            is_IQU = True
 
         # folder
         folder = self.folder
@@ -96,7 +99,7 @@ class SingleFolderDXReader(BaseMapReader):
 
         log.info("Reading %s" % os.path.basename(filename))
         output_map = hp.read_map(filename, components)
-        try:
+        if is_IQU:
             return [hp.ma(m) for m in output_map]
-        except exceptions.TypeError:
+        else:
             return hp.ma(output_map)

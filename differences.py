@@ -3,7 +3,6 @@ import json
 import exceptions
 import itertools
 import numpy as np
-from collections import SortedDict
 import logging as log
 
 import healpy as hp
@@ -17,6 +16,7 @@ def smooth_combine(maps_and_weights, fwhm=np.radians(2.0), degraded_nside=32, sp
         assert hp.isnpixok(len(maps_and_weights[0][0])), "Input maps must have either 1 or 3 components"
 
     # combine
+
     if is_IQU:
         combined_map = [
                 np.ma.sum(
@@ -25,9 +25,7 @@ def smooth_combine(maps_and_weights, fwhm=np.radians(2.0), degraded_nside=32, sp
                 for comp in [0,1,2]
                 ]
     else: # single component only
-        combined_map = [np.ma.sum(
-            [m*w for m,w in maps_and_weights]
-            ,axis=1)]
+        combined_map = [np.ma.sum( [m*w for m,w in maps_and_weights] ,axis=0)]
 
     # apply mask
     for m in combined_map:
@@ -55,14 +53,14 @@ def smooth_combine(maps_and_weights, fwhm=np.radians(2.0), degraded_nside=32, sp
 
     # metadata
     smoothed_map = hp.ma(smoothed_map)
-    metadata = SortedDict([
-             ("smooth_fwhm" , "%.2f" % np.degrees(fwhm)),
+    metadata = dict([
+             ("smooth_fwhm_deg" , "%.2f" % np.degrees(fwhm)),
              ("out_nside" , degraded_nside),
-             ("map_p2p" , smoothed_map.ptp()),
-             ("map_std" , smoothed_map.std()),
+             ("map_p2p" , "%.2e" % smoothed_map.ptp()),
+             ("map_std" , "%.2e" % smoothed_map.std()),
     ])
 
-    with open(base_filename + ".json") as f:
+    with open(base_filename + ".json", 'w') as f:
         json.dump(metadata, f)
 
 def halfrings(freq, ch, surv, pol='I', smooth_combine_config=None, degraded_nside=None, mapreader=None, output_folder="halfrings/"):
@@ -72,10 +70,15 @@ def halfrings(freq, ch, surv, pol='I', smooth_combine_config=None, degraded_nsid
     except:
         pass
 
+    if ch:
+        chtag = ch
+    else:
+        chtag = str(freq)
+
     smooth_combine(
             [(mapreader(freq, surv, ch, halfring=1, pol=pol), .5), 
              (mapreader(freq, surv, ch, halfring=2, pol=pol), -.5)],
-              base_filename=os.path.join(output_folder, "%s_SS%s" % (ch, str(surv))),
+              base_filename=os.path.join(output_folder, "%s_SS%s" % (chtag, str(surv))),
             **smooth_combine_config)
 
 def surveydiff(freq, ch, survlist=[1,2,3,4,5], pol='I', output_folder="survdiff/", mapreader=None, smooth_combine_config=None):
@@ -88,6 +91,11 @@ def surveydiff(freq, ch, survlist=[1,2,3,4,5], pol='I', output_folder="survdiff/
     # read all maps
     maps = dict([(surv, mapreader(freq, surv, ch, halfring=0, pol=pol)) for surv in survlist])
 
+    if ch:
+        chtag = ch
+    else:
+        chtag = str(freq)
+
     combs = list(itertools.combinations(survlist, 2))
     for comb in combs:
         # in case of even-odd, swap to odd-even
@@ -97,7 +105,7 @@ def surveydiff(freq, ch, survlist=[1,2,3,4,5], pol='I', output_folder="survdiff/
         smooth_combine(
                 [ (maps[comb[0]],  .5),
                   (maps[comb[1]], -.5) ],
-                base_filename=os.path.join(output_folder, "%s_SS%d-SS%d" % (ch, comb[0], comb[1])) ,
+                base_filename=os.path.join(output_folder, "%s_SS%d-SS%d" % (chtag, comb[0], comb[1])) ,
                 **smooth_combine_config )
 
 def chdiff(freq, chlist, surv, pol='I', mapreader=None, smooth_combine_config=None, output_folder="chdiff/"):
@@ -108,16 +116,22 @@ def chdiff(freq, chlist, surv, pol='I', mapreader=None, smooth_combine_config=No
     # read all maps
     maps = dict([(surv, mapreader(freq, surv, ch, halfring=0, pol=pol)) for ch in chlist])
 
+    if ch:
+        chtag = ch
+    else:
+        chtag = str(freq)
+
     combs = list(itertools.combinations(chlist, 2))
     for comb in combs:
         smooth_combine(
                 [ (maps[comb[0]],  .5),
                   (maps[comb[1]], -.5) ],
-                base_filename=os.path.join(output_folder, "%s_SS%d-SS%d" % (ch, comb[0], comb[1])) ,
+                base_filename=os.path.join(output_folder, "%s_SS%d-SS%d" % (chtag, comb[0], comb[1])) ,
                 **smooth_combine_config )
 
 if __name__ == "__main__":
+    log.root.level = log.DEBUG
     from reader import SingleFolderDXReader
-    mapreader = SingleFolderDXReader(os.environ("DX9_LFI"))
-    smooth_combine_config = dict(fwhm=np.radians(2), 
-    halfrings(30, "LFI28M", "nominal", pol='I', smooth_combine_config=smooth_combine_config, degraded_nside=32, mapreader=mapreader, output_folder="halfrings/")
+    mapreader = SingleFolderDXReader(os.environ["DX9_LFI"])
+    smooth_combine_config = dict(fwhm=np.radians(2), degraded_nside=32)
+    halfrings(30, "", "nominal", pol='I', smooth_combine_config=smooth_combine_config, mapreader=mapreader, output_folder="halfrings/")

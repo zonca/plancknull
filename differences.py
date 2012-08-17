@@ -27,7 +27,7 @@ def smooth_combine(maps_and_weights, fwhm=np.radians(2.0), degraded_nside=32, sp
     else: # single component only
         combined_map = [np.ma.sum(
             [m*w for m,w in maps_and_weights]
-            , axis=1)]
+            ,axis=1)]
 
     # apply mask
     for m in combined_map:
@@ -117,4 +117,7 @@ def chdiff(freq, chlist, surv, pol='I', mapreader=None, smooth_combine_config=No
                 **smooth_combine_config )
 
 if __name__ == "__main__":
-    pass
+    from reader import SingleFolderDXReader
+    mapreader = SingleFolderDXReader(os.environ("DX9_LFI"))
+    smooth_combine_config = dict(fwhm=np.radians(2), 
+    halfrings(30, "LFI28M", "nominal", pol='I', smooth_combine_config=smooth_combine_config, degraded_nside=32, mapreader=mapreader, output_folder="halfrings/")

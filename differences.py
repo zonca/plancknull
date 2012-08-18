@@ -4,10 +4,11 @@ import exceptions
 import itertools
 import numpy as np
 import logging as log
+from glob import glob
 
 import healpy as hp
 
-def smooth_combine(maps_and_weights, fwhm=np.radians(2.0), degraded_nside=32, spectra=False, mask=False, plot=True, base_filename="smooth_output/out"):
+def smooth_combine(maps_and_weights, fwhm=np.radians(2.0), degraded_nside=32, spectra=False, ps_mask=False, gal_mask=False, plot=True, base_filename="smooth_output/out"):
     """Combine, smooth, take-spectra, write metadata"""
 
     # check if I or IQU
@@ -16,26 +17,47 @@ def smooth_combine(maps_and_weights, fwhm=np.radians(2.0), degraded_nside=32, sp
         assert hp.isnpixok(len(maps_and_weights[0][0])), "Input maps must have either 1 or 3 components"
 
     # combine
-
     if is_IQU:
-        combined_map = [
-                np.ma.sum(
-                    [m[comp]*w for m,w in maps_and_weights]
-                    , axis=1)
-                for comp in [0,1,2]
-                ]
+        combined_map = [maps_and_weights[0][0][comp] * maps_and_weights[0][1][comp] for comp in range(3)]  
+        for comp in range(3):
+            for m,w in maps_and_weights[1:]:
+                combined_map[comp] += m[comp] * w
     else: # single component only
-        combined_map = [np.ma.sum( [m*w for m,w in maps_and_weights] ,axis=0)]
+        # combined_map is a list of 1 element
+        combined_map = [maps_and_weights[0][0] * maps_and_weights[0][1]]
+        for m,w in maps_and_weights[1:]:
+            combined_map[0] += m * w
 
+    hp.mollview(combined_map[0].filled(), min=-1e-3, max=1e-3)
     # apply mask
     for m in combined_map:
-        m.mask |= mask
+        m.mask |= ps_mask
 
     # remove monopole, only I
     combined_map[0] -= hp.fit_monopole(combined_map[0].filled(), gal_cut=30)
 
+    # smooth
+    log.debug("Smooth")
+    alms = hp.map2alm([m.filled() for m in combined_map])
+    hp.smoothalm(alms, fwhm=fwhm, inplace=True) # inplace!
+    smoothed_map = hp.alm2map(alms, degraded_nside, pixwin = False)
+    if is_IQU:
+        for sm,m in zip(smoothed_map, combined_map):
+            sm[m.mask] = hp.UNSEEN
+    else:
+        smoothed_map[combined_map[0].mask]=hp.UNSEEN
+        
+    del alms
+
+    # fits
+    log.debug("Write fits map")
+    hp.write_map(base_filename + "_map.fits", smoothed_map)
+
     # spectra
-    cl, alms = hp.anafast([m.filled() for m in combined_map], alm=True)
+    log.debug("Anafast")
+    for m in combined_map:
+        m.mask |= gal_mask
+    cl = hp.anafast([m.filled() for m in combined_map])
     # write spectra
     try:
         hp.write_cl(base_filename + "_cl.fits", cl)
@@ -43,22 +65,20 @@ def smooth_combine(maps_and_weights, fwhm=np.radians(2.0), degraded_nside=32, sp
         log.error("Write IQU Cls to fits requires more recent version of healpy")
     del cl
 
-    # smooth
-    hp.smoothalm(alms, fwhm=fwhm, inplace=True) # inplace!
-    smoothed_map = hp.alm2map(alms, degraded_nside, pixwin = False)
-    del alms
-
-    # fits
-    hp.write_map(base_filename + "_map.fits", smoothed_map)
-
     # metadata
-    smoothed_map = hp.ma(smoothed_map)
     metadata = dict([
              ("smooth_fwhm_deg" , "%.2f" % np.degrees(fwhm)),
              ("out_nside" , degraded_nside),
-             ("map_p2p" , "%.2e" % smoothed_map.ptp()),
-             ("map_std" , "%.2e" % smoothed_map.std()),
     ])
+
+    if is_IQU:
+        smoothed_map = [hp.ma(m) for m in smoothed_map]
+        for comp,m in zip("IQU", smoothed_map):
+             metadata["map_p2p_%s" % comp] = "%.2e" % m.ptp()
+             metadata["map_std_%s" % comp] = "%.2e" % m.std()
+    else:
+        metadata["map_p2p"] = "%.2e" % smoothed_map.ptp()
+        metadata["map_std"] = "%.2e" % smoothed_map.std()
 
     with open(base_filename + ".json", 'w') as f:
         json.dump(metadata, f)
@@ -132,6 +152,18 @@ def chdiff(freq, chlist, surv, pol='I', mapreader=None, smooth_combine_config=No
 if __name__ == "__main__":
     log.root.level = log.DEBUG
     from reader import SingleFolderDXReader
+    freq = 30
+    NSIDE = 1024
+
+    ps_mask = np.logical_not(np.floor(hp.ud_grade( 
+    hp.read_map(
+        glob(os.path.join(os.environ["DX9_LFI"], "MASKs",'mask_ps_%dGHz_*.fits' % freq))[0]), NSIDE))
+    )
+    gal_mask = np.logical_not(hp.read_map(
+        glob(os.path.join(os.environ["DX9_LFI"], "MASKs",'destriping_mask_%d.fits' % freq))[0])
+        )
+
     mapreader = SingleFolderDXReader(os.environ["DX9_LFI"])
-    smooth_combine_config = dict(fwhm=np.radians(2), degraded_nside=32)
-    halfrings(30, "", "nominal", pol='I', smooth_combine_config=smooth_combine_config, mapreader=mapreader, output_folder="halfrings/")
+    smooth_combine_config = dict(fwhm=np.radians(1.), degraded_nside=128,ps_mask=ps_mask, gal_mask=gal_mask)
+    #halfrings(30, "", "nominal", pol='I', smooth_combine_config=smooth_combine_config, mapreader=mapreader, output_folder="halfrings/")
+    surveydiff(30, "", survlist=[1,2], pol='I', output_folder="survdiff/", mapreader=mapreader, smooth_combine_config=smooth_combine_config)

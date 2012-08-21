@@ -55,6 +55,7 @@ class SingleFolderDXReader(BaseMapReader):
         # folder
         folder = self.folder
 
+        if chtag.startswith("LFI") and len(chtag) == 5: #horn
         # single channel
         if chtag and chtag.find('_') < 0:
             # single channels do not have underscores

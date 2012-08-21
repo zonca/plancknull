@@ -146,19 +146,21 @@ def chdiff(freq, chlist, surv, pol='I', mapreader=None, smooth_combine_config=No
     except:
         pass
     # read all maps
-    maps = dict([(surv, mapreader(freq, surv, ch, halfring=0, pol=pol)) for ch in chlist])
+    maps = dict([(ch, mapreader(freq, surv, ch, halfring=0, pol=pol)) for ch in chlist])
 
-    if ch:
-        chtag = ch
-    else:
-        chtag = str(freq)
+    metadata = dict( 
+        file_type="chdiff",
+        )
 
     combs = list(itertools.combinations(chlist, 2))
     for comb in combs:
+        metadata["title"]="Channel difference %s-%s SS%s" % (comb[0], comb[1], surv)
+        metadata["channel"] = comb
         smooth_combine(
                 [ (maps[comb[0]],  .5),
                   (maps[comb[1]], -.5) ],
-                base_filename=os.path.join(output_folder, "%s_SS%d-SS%d" % (chtag, comb[0], comb[1])) ,
+                base_filename=os.path.join(output_folder, "%s-%s_SS%s" % (comb[0],   comb[1], surv)),
+                metadata=metadata,
                 **smooth_combine_config )
 
 if __name__ == "__main__":

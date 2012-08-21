@@ -98,8 +98,4 @@ class SingleFolderDXReader(BaseMapReader):
             raise exceptions.IOError(error_log)
 
         log.info("Reading %s" % os.path.basename(filename))
-        output_map = hp.read_map(filename, components)
-        if is_IQU:
-            return [hp.ma(m) for m in output_map]
-        else:
-            return hp.ma(output_map)
+        return hp.ma(hp.read_map(filename, components))

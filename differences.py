@@ -8,7 +8,7 @@ from glob import glob
 
 import healpy as hp
 
-def smooth_combine(maps_and_weights, fwhm=np.radians(2.0), degraded_nside=32, spectra=False, ps_mask=False, gal_mask=False, plot=True, base_filename="smooth_output/out"):
+def smooth_combine(maps_and_weights, fwhm=np.radians(2.0), degraded_nside=32, spectra=False, smooth_mask=False, spectra_mask=False, plot=True, base_filename="smooth_output/out", metadata={}):
     """Combine, smooth, take-spectra, write metadata"""
 
     # check if I or IQU
@@ -18,7 +18,7 @@ def smooth_combine(maps_and_weights, fwhm=np.radians(2.0), degraded_nside=32, sp
 
     # combine
     if is_IQU:
-        combined_map = [maps_and_weights[0][0][comp] * maps_and_weights[0][1][comp] for comp in range(3)]  
+        combined_map = [maps_and_weights[0][0][comp] * maps_and_weights[0][1] for comp in range(3)]  
         for comp in range(3):
             for m,w in maps_and_weights[1:]:
                 combined_map[comp] += m[comp] * w
@@ -28,26 +28,18 @@ def smooth_combine(maps_and_weights, fwhm=np.radians(2.0), degraded_nside=32, sp
         for m,w in maps_and_weights[1:]:
             combined_map[0] += m * w
 
-    hp.mollview(combined_map[0].filled(), min=-1e-3, max=1e-3)
     # apply mask
     for m in combined_map:
-        m.mask |= ps_mask
+        m.mask |= smooth_mask
 
     # remove monopole, only I
-    combined_map[0] -= hp.fit_monopole(combined_map[0].filled(), gal_cut=30)
+    combined_map[0] -= hp.fit_monopole(combined_map[0], gal_cut=30)
 
     # smooth
     log.debug("Smooth")
-    alms = hp.map2alm([m.filled() for m in combined_map])
-    hp.smoothalm(alms, fwhm=fwhm, inplace=True) # inplace!
-    smoothed_map = hp.alm2map(alms, degraded_nside, pixwin = False)
-    if is_IQU:
-        for sm,m in zip(smoothed_map, combined_map):
-            sm[m.mask] = hp.UNSEEN
-    else:
-        smoothed_map[combined_map[0].mask]=hp.UNSEEN
-        
-    del alms
+
+    smoothed_map = hp.smoothing(combined_map, fwhm=fwhm)
+    smoothed_map = hp.ud_grade(smoothed_map, degraded_nside)
 
     # fits
     log.debug("Write fits map")
@@ -56,8 +48,8 @@ def smooth_combine(maps_and_weights, fwhm=np.radians(2.0), degraded_nside=32, sp
     # spectra
     log.debug("Anafast")
     for m in combined_map:
-        m.mask |= gal_mask
-    cl = hp.anafast([m.filled() for m in combined_map])
+        m.mask |= spectra_mask
+    cl = hp.anafast(combined_map)
     # write spectra
     try:
         hp.write_cl(base_filename + "_cl.fits", cl)
@@ -66,13 +58,11 @@ def smooth_combine(maps_and_weights, fwhm=np.radians(2.0), degraded_nside=32, sp
     del cl
 
     # metadata
-    metadata = dict([
-             ("smooth_fwhm_deg" , "%.2f" % np.degrees(fwhm)),
-             ("out_nside" , degraded_nside),
-    ])
+    metadata["smooth_fwhm_deg"] = "%.2f" % np.degrees(fwhm)
+    metadata["out_nside"] = degraded_nside
+    metadata["base_file_name"] = base_filename
 
     if is_IQU:
-        smoothed_map = [hp.ma(m) for m in smoothed_map]
         for comp,m in zip("IQU", smoothed_map):
              metadata["map_p2p_%s" % comp] = "%.2e" % m.ptp()
              metadata["map_std_%s" % comp] = "%.2e" % m.std()
@@ -82,6 +72,15 @@ def smooth_combine(maps_and_weights, fwhm=np.radians(2.0), degraded_nside=32, sp
 
     with open(base_filename + ".json", 'w') as f:
         json.dump(metadata, f)
+
+def type_of_channel_set(ch):
+    """Returns a string that identifies the set of channels"""
+    if ch == "":
+        return "frequency"
+    elif chtag.find('_') >= 0:
+        return "detset"
+    else:
+        return "single_ch"
 
 def halfrings(freq, ch, surv, pol='I', smooth_combine_config=None, degraded_nside=None, mapreader=None, output_folder="halfrings/"):
     """Half ring differences"""
@@ -95,10 +94,16 @@ def halfrings(freq, ch, surv, pol='I', smooth_combine_config=None, degraded_nsid
     else:
         chtag = str(freq)
 
+    metadata = dict( 
+        file_type="halfring_%s" % (type_of_channel_set(ch),),
+        channel=chtag,
+        title="Halfring difference survey %s ch %s" % (str(surv), chtag),
+        )
     smooth_combine(
             [(mapreader(freq, surv, ch, halfring=1, pol=pol), .5), 
              (mapreader(freq, surv, ch, halfring=2, pol=pol), -.5)],
               base_filename=os.path.join(output_folder, "%s_SS%s" % (chtag, str(surv))),
+              metadata=metadata,
             **smooth_combine_config)
 
 def surveydiff(freq, ch, survlist=[1,2,3,4,5], pol='I', output_folder="survdiff/", mapreader=None, smooth_combine_config=None):
@@ -164,6 +169,6 @@ if __name__ == "__main__":
         )
 
     mapreader = SingleFolderDXReader(os.environ["DX9_LFI"])
-    smooth_combine_config = dict(fwhm=np.radians(1.), degraded_nside=128,ps_mask=ps_mask, gal_mask=gal_mask)
-    #halfrings(30, "", "nominal", pol='I', smooth_combine_config=smooth_combine_config, mapreader=mapreader, output_folder="halfrings/")
-    surveydiff(30, "", survlist=[1,2], pol='I', output_folder="survdiff/", mapreader=mapreader, smooth_combine_config=smooth_combine_config)
+    smooth_combine_config = dict(fwhm=np.radians(1.), degraded_nside=128,smooth_mask=ps_mask, spectra_mask=gal_mask)
+    halfrings(30, "", "nominal", pol='I', smooth_combine_config=smooth_combine_config, mapreader=mapreader, output_folder="halfrings/")
+    #surveydiff(30, "", survlist=[1,2], pol='I', output_folder="survdiff/", mapreader=mapreader, smooth_combine_config=smooth_combine_config)

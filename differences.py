@@ -58,10 +58,16 @@ def smooth_combine(maps_and_weights, fwhm=np.radians(2.0), degraded_nside=32, sp
     del cl
 
     # metadata
+    metadata["base_file_name"] = base_filename
+    metadata["file_name"] = base_filename + "_cl.fits"
+
+    with open(base_filename + "_cl.json", 'w') as f:
+        json.dump(metadata, f)
+
+    metadata["file_name"] = base_filename + "_map.fits"
+
     metadata["smooth_fwhm_deg"] = "%.2f" % np.degrees(fwhm)
     metadata["out_nside"] = degraded_nside
-    metadata["base_file_name"] = base_filename
-
     if is_IQU:
         for comp,m in zip("IQU", smoothed_map):
              metadata["map_p2p_%s" % comp] = "%.2e" % m.ptp()
@@ -70,8 +76,9 @@ def smooth_combine(maps_and_weights, fwhm=np.radians(2.0), degraded_nside=32, sp
         metadata["map_p2p"] = "%.2e" % smoothed_map.ptp()
         metadata["map_std"] = "%.2e" % smoothed_map.std()
 
-    with open(base_filename + ".json", 'w') as f:
+    with open(base_filename + "_map.json", 'w') as f:
         json.dump(metadata, f)
+
 
 def type_of_channel_set(ch):
     """Returns a string that identifies the set of channels"""

@@ -43,7 +43,7 @@ class SingleFolderDXReader(BaseMapReader):
     def __init__(self, folder):
         self.folder = folder
 
-    def __call__(self, freq, surv, nside=None, chtag='', halfring=0, pol="I"):
+    def __call__(self, freq, surv, chtag='', nside=None, halfring=0, pol="I"):
         # stokes component
         components = [stokes.index(p) for p in pol]
         if len(components) == 1:

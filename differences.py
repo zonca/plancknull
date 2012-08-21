@@ -77,7 +77,7 @@ def type_of_channel_set(ch):
     """Returns a string that identifies the set of channels"""
     if ch == "":
         return "frequency"
-    elif chtag.find('_') >= 0:
+    elif ch.find('_') >= 0:
         return "detset"
     else:
         return "single_ch"
@@ -121,16 +121,23 @@ def surveydiff(freq, ch, survlist=[1,2,3,4,5], pol='I', output_folder="survdiff/
     else:
         chtag = str(freq)
 
+    metadata = dict( 
+        file_type="surveydiff_%s" % (type_of_channel_set(ch),),
+        channel=chtag,
+        )
+
     combs = list(itertools.combinations(survlist, 2))
     for comb in combs:
         # in case of even-odd, swap to odd-even
         if comb[1] % 2 != 0 and comb[0] % 2 == 0:
             comb = (comb[1], comb[0])
 
+        metadata["title"]="Survey difference SS%s-SS%s ch %s" % (str(comb[0])[:4], str(comb[1])[:4], chtag),
         smooth_combine(
                 [ (maps[comb[0]],  .5),
                   (maps[comb[1]], -.5) ],
                 base_filename=os.path.join(output_folder, "%s_SS%d-SS%d" % (chtag, comb[0], comb[1])) ,
+                metadata=metadata,
                 **smooth_combine_config )
 
 def chdiff(freq, chlist, surv, pol='I', mapreader=None, smooth_combine_config=None, output_folder="chdiff/"):

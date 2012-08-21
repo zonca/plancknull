@@ -1,0 +1,15 @@
+#!/bin/bash
+#PBS -l nodes=10:ppn=4
+#PBS -l walltime=3:00:00,pvmem=5GB
+#PBS -N null
+#PBS -q usplanck
+#PBS -j oe
+#PBS -o ipc.out
+#PBS -A usplanck
+#PBS -V
+
+# Path to your executable. For example, if you extracted SCOOP to $HOME/downloads/scoop
+cd $HOME/downloads/scoop/examples
+
+# Launch SCOOP using the hosts
+python -m scoop fullTree.py

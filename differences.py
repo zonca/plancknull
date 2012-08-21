@@ -82,7 +82,7 @@ def type_of_channel_set(ch):
     else:
         return "single_ch"
 
-def halfrings(freq, ch, surv, pol='I', smooth_combine_config=None, degraded_nside=None, mapreader=None, output_folder="halfrings/"):
+def halfrings(freq, ch, surv, pol='I', smooth_combine_config=None, degraded_nside=None, mapreader=None, output_folder="halfrings/", read_masks=None):
     """Half ring differences"""
     try:
         os.mkdir(output_folder)
@@ -94,6 +94,11 @@ def halfrings(freq, ch, surv, pol='I', smooth_combine_config=None, degraded_nsid
     else:
         chtag = str(freq)
 
+    if not read_masks is None:
+        ps_mask, gal_mask = read_masks(freq)
+    else:
+        ps_mask = None; gal_mask = None
+
     metadata = dict( 
         file_type="halfring_%s" % (type_of_channel_set(ch),),
         channel=chtag,
@@ -104,9 +109,12 @@ def halfrings(freq, ch, surv, pol='I', smooth_combine_config=None, degraded_nsid
              (mapreader(freq, surv, ch, halfring=2, pol=pol), -.5)],
               base_filename=os.path.join(output_folder, "%s_SS%s" % (chtag, str(surv))),
               metadata=metadata,
+              smooth_mask=ps_mask,
+              spectra_mask=gal_mask,
             **smooth_combine_config)
+    return 1
 
-def surveydiff(freq, ch, survlist=[1,2,3,4,5], pol='I', output_folder="survdiff/", mapreader=None, smooth_combine_config=None):
+def surveydiff(freq, ch, survlist=[1,2,3,4,5], pol='I', output_folder="survdiff/", mapreader=None, smooth_combine_config=None, read_masks=None):
     """Survey differences"""
     try:
         os.mkdir(output_folder)
@@ -120,6 +128,11 @@ def surveydiff(freq, ch, survlist=[1,2,3,4,5], pol='I', output_folder="survdiff/
         chtag = ch
     else:
         chtag = str(freq)
+
+    if not read_masks is None:
+        ps_mask, gal_mask = read_masks(freq)
+    else:
+        ps_mask = None; gal_mask = None
 
     metadata = dict( 
         file_type="surveydiff_%s" % (type_of_channel_set(ch),),
@@ -138,15 +151,23 @@ def surveydiff(freq, ch, survlist=[1,2,3,4,5], pol='I', output_folder="survdiff/
                   (maps[comb[1]], -.5) ],
                 base_filename=os.path.join(output_folder, "%s_SS%d-SS%d" % (chtag, comb[0], comb[1])) ,
                 metadata=metadata,
+              smooth_mask=ps_mask,
+              spectra_mask=gal_mask,
                 **smooth_combine_config )
+    return 1
 
-def chdiff(freq, chlist, surv, pol='I', mapreader=None, smooth_combine_config=None, output_folder="chdiff/"):
+def chdiff(freq, chlist, surv, pol='I', mapreader=None, smooth_combine_config=None, output_folder="chdiff/", read_masks=None):
     try:
         os.mkdir(output_folder)
     except:
         pass
     # read all maps
     maps = dict([(ch, mapreader(freq, surv, ch, halfring=0, pol=pol)) for ch in chlist])
+
+    if not read_masks is None:
+        ps_mask, gal_mask = read_masks(freq)
+    else:
+        ps_mask = None; gal_mask = None
 
     metadata = dict( 
         file_type="chdiff",
@@ -161,7 +182,10 @@ def chdiff(freq, chlist, surv, pol='I', mapreader=None, smooth_combine_config=No
                   (maps[comb[1]], -.5) ],
                 base_filename=os.path.join(output_folder, "%s-%s_SS%s" % (comb[0],   comb[1], surv)),
                 metadata=metadata,
+              smooth_mask=ps_mask,
+              spectra_mask=gal_mask,
                 **smooth_combine_config )
+    return 1
 
 if __name__ == "__main__":
     log.root.level = log.DEBUG

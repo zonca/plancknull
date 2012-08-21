@@ -56,22 +56,22 @@ mapreader = SingleFolderDXReader(os.environ["DX9_LFI"])
 #    for chtag in chtags:
 #         surveydiff(freq, chtag, survs, pol='IQU', smooth_combine_config=smooth_combine_config, mapreader=mapreader, output_folder="dx9/surveydiff/")
 
-print "SURVDIFF, CH"
-survs = [1,2,3,4,5]
-freqs = [70]
-for freq in freqs:
-    ps_mask, gal_mask = read_dpc_masks(freq, NSIDE)
-    smooth_combine_config = dict(fwhm=np.radians(1.), degraded_nside=128,smooth_mask=ps_mask, spectra_mask=gal_mask)
-    chtags = chlist(freq)
-    for chtag in chtags:
-         surveydiff(freq, chtag, survs, pol='I', smooth_combine_config=smooth_combine_config, mapreader=mapreader, output_folder="dx9/surveydiff/")
-
-#print "CHDIFF"
-#survs = [1]
-#freqs = [30, 44, 70]
-#    
+#print "SURVDIFF, CH"
+#survs = [1,2,3,4,5]
+#freqs = [70]
 #for freq in freqs:
 #    ps_mask, gal_mask = read_dpc_masks(freq, NSIDE)
 #    smooth_combine_config = dict(fwhm=np.radians(1.), degraded_nside=128,smooth_mask=ps_mask, spectra_mask=gal_mask)
-#    for surv in survs:
-#        chdiff(freq, horns[freq], surv, pol='I', smooth_combine_config=smooth_combine_config, mapreader=mapreader, output_folder="dx9/chdiff/")
+#    chtags = chlist(freq)
+#    for chtag in chtags:
+#         surveydiff(freq, chtag, survs, pol='I', smooth_combine_config=smooth_combine_config, mapreader=mapreader, output_folder="dx9/surveydiff/")
+
+print "CHDIFF"
+survs = [1]
+freqs = [30, 44, 70]
+    
+for freq in freqs:
+    ps_mask, gal_mask = read_dpc_masks(freq, NSIDE)
+    smooth_combine_config = dict(fwhm=np.radians(1.), degraded_nside=128,smooth_mask=ps_mask, spectra_mask=gal_mask)
+    for surv in survs:
+        chdiff(freq, HORNS[freq], surv, pol='I', smooth_combine_config=smooth_combine_config, mapreader=mapreader, output_folder="dx9/chdiff/")

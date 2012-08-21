@@ -47,15 +47,11 @@ class SingleFolderDXReader(BaseMapReader):
         # stokes component
         components = [stokes.index(p) for p in pol]
         if len(components) == 1:
-            is_IQU = False
             components = components[0]
-        else:
-            is_IQU = True
 
         # folder
         folder = self.folder
 
-        if chtag.startswith("LFI") and len(chtag) == 5: #horn
         # single channel
         if chtag and chtag.find('_') < 0:
             # single channels do not have underscores
@@ -65,6 +61,9 @@ class SingleFolderDXReader(BaseMapReader):
             else:
                 folder = os.path.join(self.folder, "channels")
                 chtag = chtag.translate(None, "LFI") # remove LFI from channel name
+
+        if chtag.find('_')<0 and len(chtag) == 2: #horn
+            is_horn = True
 
         # subset tag
         subset_halfring_tag = chtag
@@ -86,17 +85,31 @@ class SingleFolderDXReader(BaseMapReader):
             nside_tag = "????"
 
         # read_map
-        filename_pattern = os.path.join(folder, "???_%s_%s_????????%s_%s.fits*" % (str(freq), nside_tag, subset_halfring_tag, surv))
-        filename = glob(filename_pattern)
-        if len(filename) == 1:
-            filename = filename[0]
-        else: 
-            if len(filename) == 0:
-                error_log = "No match for pattern " + filename_pattern
+        output_map = []
+        if is_horn:
+            if freq > 70:
+                tags = [subset_halfring_tag.replace(chtag, chtag+'a'), subset_halfring_tag.replace(chtag, chtag+'b')]
             else:
-                error_log = "Multiple matches for pattern " + filename_pattern
-            log.fatal(error_log)
-            raise exceptions.IOError(error_log)
+                tags = [subset_halfring_tag.replace(chtag, chtag+'M'), subset_halfring_tag.replace(chtag, chtag+'S')]
+        else:
+            tags = [subset_halfring_tag]
+        for tag in tags:
+            filename_pattern = os.path.join(folder, "???_%s_%s_????????%s_%s.fits*" % (str(freq), nside_tag, tag, surv))
+            filename = glob(filename_pattern)
+            if len(filename) == 1:
+                filename = filename[0]
+            else: 
+                if len(filename) == 0:
+                    error_log = "No match for pattern " + filename_pattern
+                else:
+                    error_log = "Multiple matches for pattern " + filename_pattern
+                log.fatal(error_log)
+                raise exceptions.IOError(error_log)
 
-        log.info("Reading %s" % os.path.basename(filename))
-        return hp.ma(hp.read_map(filename, components))
+            log.info("Reading %s" % os.path.basename(filename))
+            output_map.append(hp.ma(hp.read_map(filename, components)))
+
+        if is_horn:
+            return output_map[0] + output_map[1]
+        else:
+            return output_map[0]

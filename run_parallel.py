@@ -5,7 +5,25 @@ from glob import glob
 import os
 from differences import halfrings, surveydiff, chdiff 
 from reader import SingleFolderDXReader
-from scoop import futures
+
+try:
+    from scoop import futures
+except ImportError:
+    sys.stderr.write("You do not have the 'scoop' extension.\n"
+                     "Install it using the following command:\n\n"
+                     "    pip install [--user] scoop\n\n"
+                     "(specify --user if you do not have root\n"
+                     "privileges on the system you're running)."
+    sys.exit(1)
+
+import sys
+
+try:
+    INPUT_PATH = os.environ["DX9_LFI"]
+except KeyError:
+    sys.stderr.write("You must set the environment variable DX9_LFI to the\n"
+                     "path containing the data release files.\n")
+    sys.exit(1)
 
 def read_dpc_masks(freq):
     if freq > 70:
@@ -14,10 +32,10 @@ def read_dpc_masks(freq):
         nside = 1024
     ps_mask = np.logical_not(np.floor(hp.ud_grade( 
     hp.read_map(
-        glob(os.path.join(os.environ["DX9_LFI"], "MASKs",'mask_ps_%dGHz_*.fits' % freq))[0]), nside))
+        glob(os.path.join(INPUT_PATH, "MASKs",'mask_ps_%dGHz_*.fits' % freq))[0]), nside))
     ).astype(np.bool)
     gal_filename = glob(os.path.join(
-        os.environ["DX9_LFI"], "MASKs",
+        INPUT_PATH, "MASKs",
         'destriping_mask_%d.fits' % freq))[0]
     gal_mask = np.logical_not(hp.read_map(gal_filename)).astype(np.bool)
     return ps_mask, gal_mask
@@ -34,7 +52,7 @@ def chlist(freq):
 NSIDE = 1024
 
 log.root.level = log.DEBUG
-mapreader = SingleFolderDXReader(os.environ["DX9_LFI"])
+mapreader = SingleFolderDXReader(INPUT_PATH)
 
 if __name__ == '__main__':
 

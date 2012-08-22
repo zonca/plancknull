@@ -4,7 +4,6 @@ import healpy as hp
 from glob import glob
 import os
 from differences import halfrings, surveydiff, chdiff 
-from reader import SingleFolderDXReader
 import sys
 
 try:
@@ -13,6 +12,25 @@ except KeyError:
     sys.stderr.write("You must set the environment variable DX9_LFI to the\n"
                      "path containing the data release files.\n")
     sys.exit(1)
+
+try:
+    READER = os.environ["NULLTESTS_ENV"]
+except KeyError:
+    sys.stderr.write("You must set the environment variable NULLTESTS_ENV\n"
+                     "either to 'NERSC' or 'LFIDPC', according to the\n"
+                     "system under which you are running the script\n")
+    sys.exit(1)
+
+if READER not in ('NERSC', 'LFIDPC'):
+    sys.stderr.write("Invalid value for $NULLTESTS_ENV (\"{0}\")\n"
+                     .format(READER))
+    sys.exit(1)
+
+if READER == "NERSC":
+    from reader import SingleFolderDXReader as MapReader
+else:
+    from reader import DPCDX9Reader as MapReader
+
 
 def read_dpc_masks(freq, nside):
     ps_mask = np.logical_not(np.floor(hp.ud_grade( 
@@ -37,7 +55,7 @@ def chlist(freq):
 NSIDE = 1024
 
 log.root.level = log.DEBUG
-mapreader = SingleFolderDXReader(INPUT_PATH)
+mapreader = MapReader(INPUT_PATH)
 
 #print "HALFRINGS"
 #survs = ["nominal", "full"]

@@ -64,6 +64,8 @@ class SingleFolderDXReader(BaseMapReader):
 
         if chtag.find('_')<0 and len(chtag) == 2: #horn
             is_horn = True
+        else:
+            is_horn = False
 
         # subset tag
         subset_halfring_tag = chtag
@@ -110,6 +112,7 @@ class SingleFolderDXReader(BaseMapReader):
             output_map.append(hp.ma(hp.read_map(filename, components)))
 
         if is_horn:
-            return output_map[0] + output_map[1]
+            log.info("Combining maps in horn map")
+            return .5 * (output_map[0] + output_map[1])
         else:
             return output_map[0]

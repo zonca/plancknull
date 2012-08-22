@@ -7,6 +7,8 @@ from differences import halfrings, surveydiff, chdiff
 from reader import SingleFolderDXReader
 from scoop import futures
 
+os.environ["DX9_LFI"] = "/global/project/projectdirs/planck/data/mission/DPC_maps/dx9/lfi/"
+
 def read_dpc_masks(freq):
     if freq > 70:
         nside = 2048
@@ -38,17 +40,19 @@ mapreader = SingleFolderDXReader(os.environ["DX9_LFI"])
 
 if __name__ == '__main__':
 
+    tasks = []
+
     print "HALFRINGS"
     survs = ["nominal", "full"]
     freqs = [30,44,70]
     for freq in freqs:
-        smooth_combine_config = dict(fwhm=np.radians(1.), degraded_nside=128,read_masks=read_dpc_masks)
+        smooth_combine_config = dict(fwhm=np.radians(1.), degraded_nside=128)
         chtags = [""]
         if freq == 70:
             chtags += ["18_23", "19_22", "20_21"]
         for chtag in chtags:
             for surv in survs:
-                futures.submit(halfrings,freq, chtag, surv, pol='IQU', smooth_combine_config=smooth_combine_config, mapreader=mapreader, output_folder="dx9/halfrings/")
+                tasks.append(futures.submit(halfrings,freq, chtag, surv, pol='IQU', smooth_combine_config=smooth_combine_config, mapreader=mapreader, output_folder="dx9/halfrings2/",read_masks=read_dpc_masks))
 
     #print "SURVDIFF"
     #survs = [1,2,3,4,5]
@@ -60,7 +64,7 @@ if __name__ == '__main__':
     #    if freq == 70:
     #        chtags += ["18_23", "19_22", "20_21"]
     #    for chtag in chtags:
-    #         surveydiff(freq, chtag, survs, pol='IQU', smooth_combine_config=smooth_combine_config, mapreader=mapreader, output_folder="dx9/surveydiff/")
+    #         surveydiff(freq, chtag, survs, pol='IQU', smooth_combine_config=smooth_combine_config, mapreader=mapreader, output_folder="dx9/surveydiff/",read_masks=read_dpc_masks)
 
     #print "SURVDIFF, CH"
     #survs = [1,2,3,4,5]
@@ -70,7 +74,7 @@ if __name__ == '__main__':
     #    smooth_combine_config = dict(fwhm=np.radians(1.), degraded_nside=128,smooth_mask=ps_mask, spectra_mask=gal_mask)
     #    chtags = chlist(freq)
     #    for chtag in chtags:
-    #         surveydiff(freq, chtag, survs, pol='I', smooth_combine_config=smooth_combine_config, mapreader=mapreader, output_folder="dx9/surveydiff/")
+    #         surveydiff(freq, chtag, survs, pol='I', smooth_combine_config=smooth_combine_config, mapreader=mapreader, output_folder="dx9/surveydiff/",read_masks=read_dpc_masks)
 
     #print "CHDIFF"
     #survs = [1]
@@ -80,4 +84,7 @@ if __name__ == '__main__':
     #    ps_mask, gal_mask = read_dpc_masks(freq, NSIDE)
     #    smooth_combine_config = dict(fwhm=np.radians(1.), degraded_nside=128,smooth_mask=ps_mask, spectra_mask=gal_mask)
     #    for surv in survs:
-    #        chdiff(freq, HORNS[freq], surv, pol='I', smooth_combine_config=smooth_combine_config, mapreader=mapreader, output_folder="dx9/chdiff/")
+            #chdiff(freq, ["LFI%d" % h for h in HORNS[freq]], surv, pol='I', smooth_combine_config=smooth_combine_config, mapreader=mapreader, output_folder="dx9/chdiff/", read_masks=read_dpc_masks)
+
+    print("Wait for %d tasks to complete" % len(tasks))
+    futures.wait(tasks)

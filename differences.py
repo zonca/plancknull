@@ -5,8 +5,17 @@ import itertools
 import numpy as np
 import logging as log
 from glob import glob
-
+from reader import SingleFolderDXReader
 import healpy as hp
+
+def configure_file_logger(base_filename):
+    rl = log.root
+    handler = log.FileHandler(base_filename + ".log", mode='w')
+    handler.setLevel(log.DEBUG)
+    handler.setFormatter(log.Formatter('%(asctime)s %(levelname)-8s %(message)s'))
+    for h in rl.handlers:
+        rl.removeHandler(h)
+    rl.addHandler( handler )
 
 def smooth_combine(maps_and_weights, fwhm=np.radians(2.0), degraded_nside=32, spectra=False, smooth_mask=False, spectra_mask=False, plot=True, base_filename="smooth_output/out", metadata={}):
     """Combine, smooth, take-spectra, write metadata"""
@@ -42,7 +51,7 @@ def smooth_combine(maps_and_weights, fwhm=np.radians(2.0), degraded_nside=32, sp
     smoothed_map = hp.ud_grade(smoothed_map, degraded_nside)
 
     # fits
-    log.debug("Write fits map")
+    log.debug("Write fits map: " + base_filename + "_map.fits")
     hp.write_map(base_filename + "_map.fits", smoothed_map)
 
     # spectra
@@ -51,6 +60,7 @@ def smooth_combine(maps_and_weights, fwhm=np.radians(2.0), degraded_nside=32, sp
         m.mask |= spectra_mask
     cl = hp.anafast(combined_map)
     # write spectra
+    log.debug("Write cl: " + base_filename + "_cl.fits")
     try:
         hp.write_cl(base_filename + "_cl.fits", cl)
     except exceptions.NotImplementedError:
@@ -89,8 +99,10 @@ def type_of_channel_set(ch):
     else:
         return "single_ch"
 
-def halfrings(freq, ch, surv, pol='I', smooth_combine_config=None, degraded_nside=None, mapreader=None, output_folder="halfrings/", read_masks=None):
+def halfrings(freq, ch, surv, pol='I', smooth_combine_config=None, degraded_nside=None, mapreader=None, output_folder="halfrings/", read_masks=None,log_to_file=True):
     """Half ring differences"""
+
+    mapreader = SingleFolderDXReader(os.environ["DX9_LFI"])
     try:
         os.mkdir(output_folder)
     except:
@@ -100,6 +112,11 @@ def halfrings(freq, ch, surv, pol='I', smooth_combine_config=None, degraded_nsid
         chtag = ch
     else:
         chtag = str(freq)
+
+    base_filename = os.path.join(output_folder, "%s_SS%s" % (chtag, str(surv)))
+    if log_to_file:
+        configure_file_logger(base_filename)
+    log.info("Start logging")
 
     if not read_masks is None:
         ps_mask, gal_mask = read_masks(freq)
@@ -111,30 +128,36 @@ def halfrings(freq, ch, surv, pol='I', smooth_combine_config=None, degraded_nsid
         channel=chtag,
         title="Halfring difference survey %s ch %s" % (str(surv), chtag),
         )
+    log.info("Call smooth_combine")
     smooth_combine(
             [(mapreader(freq, surv, ch, halfring=1, pol=pol), .5), 
              (mapreader(freq, surv, ch, halfring=2, pol=pol), -.5)],
-              base_filename=os.path.join(output_folder, "%s_SS%s" % (chtag, str(surv))),
+              base_filename=base_filename,
               metadata=metadata,
               smooth_mask=ps_mask,
               spectra_mask=gal_mask,
             **smooth_combine_config)
     return 1
 
-def surveydiff(freq, ch, survlist=[1,2,3,4,5], pol='I', output_folder="survdiff/", mapreader=None, smooth_combine_config=None, read_masks=None):
+def surveydiff(freq, ch, survlist=[1,2,3,4,5], pol='I', output_folder="survdiff/", mapreader=None, smooth_combine_config=None, read_masks=None, log_to_file=True):
     """Survey differences"""
     try:
         os.mkdir(output_folder)
     except:
         pass
 
-    # read all maps
-    maps = dict([(surv, mapreader(freq, surv, ch, halfring=0, pol=pol)) for surv in survlist])
-
     if ch:
         chtag = ch
     else:
         chtag = str(freq)
+
+    if log_to_file:
+        configure_file_logger(os.path.join(output_folder, "%s_SSdiff" % chtag))
+
+    mapreader = SingleFolderDXReader(os.environ["DX9_LFI"])
+    # read all maps
+    maps = dict([(surv, mapreader(freq, surv, ch, halfring=0, pol=pol)) for surv in survlist])
+
 
     if not read_masks is None:
         ps_mask, gal_mask = read_masks(freq)
@@ -163,11 +186,12 @@ def surveydiff(freq, ch, survlist=[1,2,3,4,5], pol='I', output_folder="survdiff/
                 **smooth_combine_config )
     return 1
 
-def chdiff(freq, chlist, surv, pol='I', mapreader=None, smooth_combine_config=None, output_folder="chdiff/", read_masks=None):
+def chdiff(freq, chlist, surv, pol='I', mapreader=None, smooth_combine_config=None, output_folder="chdiff/", read_masks=None, log_to_file=False):
     try:
         os.mkdir(output_folder)
     except:
         pass
+    mapreader = SingleFolderDXReader(os.environ["DX9_LFI"])
     # read all maps
     maps = dict([(ch, mapreader(freq, surv, ch, halfring=0, pol=pol)) for ch in chlist])
 

@@ -40,9 +40,9 @@ depending whether you have admin's right or not.
 To run the code, you must set the value of the following environment
 variables:
 
-* =DX9_LFI= should point to the path containing the FITS files
+* `DX9_LFI` should point to the path containing the FITS files
   relevant for the DX under study
-* =NULLTESTS_ENV= specifies the naming convention used for the FITS
+* `NULLTESTS_ENV` specifies the naming convention used for the FITS
   files. It must be either `LFIDPC` or `NERSC`.
 
 As an example, under Bash you can run the code with this command:

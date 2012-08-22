@@ -4,6 +4,7 @@ import logging as log
 import os.path
 import numpy as np
 import healpy as hp
+import re
 
 stokes = "IQU"
 
@@ -116,3 +117,114 @@ class SingleFolderDXReader(BaseMapReader):
             return .5 * (output_map[0] + output_map[1])
         else:
             return output_map[0]
+
+
+class DPCDX9Reader(BaseMapReader):
+    """All maps in a single folder, DX9 naming convention"""
+
+    def __init__(self, folder):
+        self.folder = folder
+
+    def __call__(self, freq, surv, chtag='', nside=None, halfring=0, pol="I"):
+        """Read a map and return the array of pixels.
+        
+        Parameters
+        ----------
+        freq : int
+            frequency
+        surv : int or string
+            "nominal", "full", or survey number
+        nside : None or int
+            if None matches any nside, otherwise integer nside
+        chtag : string 
+            can be "" for frequency, radiometer("LFI18S"), horn("LFI18"), quadruplet("18_23"), detset("detset_1")
+        halfring : int
+            0 for full, 1 and 2 for first and second halfrings
+        pol : string
+            required polarization components, e.g. 'I', 'Q', 'IQU'
+
+        Returns
+        -------
+        maps : array or tuple of arrays
+            single map or tuple of maps as returned by healpy.read_map
+        """
+
+        radiometer_regex = re.compile("^LFI([0-9][0-9][MS])$")
+        horn_regex = re.compile("^LFI([0-9][0-9])$")
+        quadruplet_regex = re.compile("^([0-9][0-9]_[0-9][0-9])$")
+
+        base_path = self.folder
+
+        format_dict = {'freq': '',
+                       'nside': '',
+                       'survey': ''}
+
+        if freq in (30, 44, 70):
+            format_dict['freq'] = freq
+        else:
+            format_dict['freq'] = '*'
+
+        if nside is None:
+            format_dict['nside'] = '*'  # This will be filled by 'glob'
+        else:
+            format_dict['nside'] = nside
+
+        if surv == "nominal":
+            format_dict['survey'] = "nominal"
+        elif surv == "full":
+            format_dict['survey'] = "full"
+        elif type(surv) is int:
+            format_dict['survey'] = "survey_%d" % surv
+        else:
+            raise ValueError("Unknown tag '{0}' for 'surv'".format(surv))
+
+        radiometer_match = radiometer_regex.match(chtag)
+        horn_match = horn_regex.match(chtag)
+        quadruplet_match = quadruplet_regex.match(chtag)
+
+        if chtag == "":
+            # We look for a frequency map
+            if type(surv) is int:
+                base_path = os.path.join(base_path, "Surveys_DX9")
+
+            filename = glob(os.path.join(base_path,
+                                         "LFI_{freq}_{nside}_????????_{survey}.fits"
+                                         .format(**format_dict)))
+        elif radiometer_match:
+            # We look for a radiometer map
+            filename = glob(os.path.join(base_path, "SINGLE_horn_Survey",
+                                         "LFI_{freq}_{nside}_????????_{rad}_{survey}.fits"
+                                         .format(rad=radiometer_match.group(1),
+                                                 **format_dict)))
+            pass
+        elif horn_match:
+            # We look for a horn map
+            raise RuntimeError("Horn maps are currently not delivered by the LFI DPC")
+
+        elif quadruplet_match:
+            # We look for a quadruplet map
+            if surv in ("nominal", "full"):
+                base_path = os.path.join(base_path, "Couple_horn_DX9")
+            else:
+                base_path = os.path.join(base_path, "Couple_horn_Surveys_DX9")
+
+            filename = glob(os.path.join(base_path,
+                                         "LFI_{freq}_{nside}_????????_{quadruplet}_{survey}.fits"
+                                         .format(quadruplet=quadruplet_match.group(1),
+                                                 **format_dict)))
+
+        if not filename:
+            raise RuntimeError(("Unable to find a match (freq: '{freq}', "
+                                "nside: '{nside}', survey: '{survey}')")
+                               .format(**format_dict))
+
+        if len(filename) > 1:
+            # Take the last one, as it is likely to be the most recent
+            filename = filename.sorted()[-1]
+
+        components = [stokes.index(p) for p in pol]
+        if len(components) == 1:
+            components = components[0]
+
+        log.info("Reading file {}".format(os.path.basename(filename)))
+        return hp.ma(hp.read_map(filename, components))

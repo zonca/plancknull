@@ -58,7 +58,7 @@ if __name__ == '__main__':
             for chtag in chtags:
                 for surv in survs:
                     if paral:
-                        tasks.append(lview.apply_sync(halfrings,freq, chtag, surv, pol='IQU', smooth_combine_config=smooth_combine_config, root_folder=root_folder,read_masks=read_dpc_masks,log_to_file=True))
+                        tasks.append(lview.apply_async(halfrings,freq, chtag, surv, pol='IQU', smooth_combine_config=smooth_combine_config, root_folder=root_folder,read_masks=read_dpc_masks,log_to_file=True))
                     else:
                         halfrings(freq, chtag, surv, pol='IQU', smooth_combine_config=smooth_combine_config, root_folder=root_folder,read_masks=read_dpc_masks,log_to_file=False)
 
@@ -78,7 +78,7 @@ if __name__ == '__main__':
                 else:
                     pol="IQU"
                 if paral:
-                    tasks.append(lview.apply_sync(surveydiff,freq, chtag, survs, pol=pol, smooth_combine_config=smooth_combine_config, root_folder=root_folder,read_masks=read_dpc_masks,log_to_file=True))
+                    tasks.append(lview.apply_async(surveydiff,freq, chtag, survs, pol=pol, smooth_combine_config=smooth_combine_config, root_folder=root_folder,read_masks=read_dpc_masks,log_to_file=True))
                 else:
                     surveydiff(freq, chtag, survs, pol=pol, smooth_combine_config=smooth_combine_config, root_folder=root_folder,read_masks=read_dpc_masks,log_to_file=True)
 
@@ -91,7 +91,7 @@ if __name__ == '__main__':
             smooth_combine_config = dict(fwhm=np.radians(1.), degraded_nside=128)
             for surv in survs:
                 if paral:
-                   tasks.append(lview.apply_sync(chdiff,freq, ["LFI%d" % h for h in HORNS[freq]], surv, pol='I', smooth_combine_config=smooth_combine_config, root_folder=root_folder, read_masks=read_dpc_masks,log_to_file=True))
+                   tasks.append(lview.apply_async(chdiff,freq, ["LFI%d" % h for h in HORNS[freq]], surv, pol='I', smooth_combine_config=smooth_combine_config, root_folder=root_folder, read_masks=read_dpc_masks,log_to_file=True))
                 else:
                    chdiff(freq, ["LFI%d" % h for h in HORNS[freq]], surv, pol='I', smooth_combine_config=smooth_combine_config, root_folder=root_folder, read_masks=read_dpc_masks,log_to_file=True)
 

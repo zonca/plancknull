@@ -14,6 +14,7 @@ def configure_file_logger(base_filename):
     handler.setLevel(log.DEBUG)
     handler.setFormatter(log.Formatter('%(asctime)s %(levelname)-8s %(message)s'))
     for h in rl.handlers:
+        h.stream.close()
         rl.removeHandler(h)
     rl.addHandler( handler )
 

@@ -1,6 +1,6 @@
 #!/bin/bash
-#PBS -l nodes=2:ppn=4
-#PBS -l walltime=3:00:00,pvmem=5GB
+#PBS -l nodes=30:ppn=2
+#PBS -l walltime=2:00:00,pvmem=10GB
 #PBS -N null
 #PBS -q usplanck
 #PBS -j oe
@@ -10,5 +10,5 @@
 
 cd $PBS_O_WORKDIR
 
-export OMP_NUM_THREADS 2
-mpirun -np 8 python -m scoop run_parallel.py
+export OMP_NUM_THREADS 4
+mpirun -np 60 -bysocket -bind-to-socket python -m scoop sco.py

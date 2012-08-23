@@ -5,8 +5,8 @@ import itertools
 import numpy as np
 import logging as log
 from glob import glob
-from reader import SingleFolderDXReader
 import healpy as hp
+from reader import SingleFolderDXReader
 
 def configure_file_logger(base_filename):
     rl = log.root
@@ -17,7 +17,7 @@ def configure_file_logger(base_filename):
         rl.removeHandler(h)
     rl.addHandler( handler )
 
-def smooth_combine(maps_and_weights, fwhm=np.radians(2.0), degraded_nside=32, spectra=False, smooth_mask=False, spectra_mask=False, plot=True, base_filename="smooth_output/out", metadata={}):
+def smooth_combine(maps_and_weights, fwhm=np.radians(2.0), degraded_nside=32, spectra=False, smooth_mask=False, spectra_mask=False, plot=True, base_filename="out", root_folder=".", metadata={}):
     """Combine, smooth, take-spectra, write metadata"""
 
     # check if I or IQU
@@ -52,7 +52,7 @@ def smooth_combine(maps_and_weights, fwhm=np.radians(2.0), degraded_nside=32, sp
 
     # fits
     log.debug("Write fits map: " + base_filename + "_map.fits")
-    hp.write_map(base_filename + "_map.fits", smoothed_map)
+    hp.write_map(os.path.join(root_folder, base_filename + "_map.fits"), smoothed_map)
 
     # spectra
     log.debug("Anafast")
@@ -62,7 +62,7 @@ def smooth_combine(maps_and_weights, fwhm=np.radians(2.0), degraded_nside=32, sp
     # write spectra
     log.debug("Write cl: " + base_filename + "_cl.fits")
     try:
-        hp.write_cl(base_filename + "_cl.fits", cl)
+        hp.write_cl(os.path.join(root_folder, base_filename + "_cl.fits"), cl)
     except exceptions.NotImplementedError:
         log.error("Write IQU Cls to fits requires more recent version of healpy")
     del cl
@@ -70,11 +70,13 @@ def smooth_combine(maps_and_weights, fwhm=np.radians(2.0), degraded_nside=32, sp
     # metadata
     metadata["base_file_name"] = base_filename
     metadata["file_name"] = base_filename + "_cl.fits"
+    metadata["file_type"] += "_cl"
 
-    with open(base_filename + "_cl.json", 'w') as f:
+    with open(os.path.join(root_folder, base_filename + "_cl.json"), 'w') as f:
         json.dump(metadata, f)
 
     metadata["file_name"] = base_filename + "_map.fits"
+    metadata["file_type"] = metadata["file_type"].replace("_cl","_map")
 
     metadata["smooth_fwhm_deg"] = "%.2f" % np.degrees(fwhm)
     metadata["out_nside"] = degraded_nside
@@ -86,7 +88,7 @@ def smooth_combine(maps_and_weights, fwhm=np.radians(2.0), degraded_nside=32, sp
         metadata["map_p2p"] = "%.2e" % smoothed_map.ptp()
         metadata["map_std"] = "%.2e" % smoothed_map.std()
 
-    with open(base_filename + "_map.json", 'w') as f:
+    with open(os.path.join(root_folder, base_filename + "_map.json"), 'w') as f:
         json.dump(metadata, f)
 
 
@@ -99,12 +101,12 @@ def type_of_channel_set(ch):
     else:
         return "single_ch"
 
-def halfrings(freq, ch, surv, pol='I', smooth_combine_config=None, degraded_nside=None, mapreader=None, output_folder="halfrings/", read_masks=None,log_to_file=True):
+def halfrings(freq, ch, surv, pol='I', smooth_combine_config=None, degraded_nside=None, root_folder="out/", read_masks=None,log_to_file=False):
     """Half ring differences"""
 
     mapreader = SingleFolderDXReader(os.environ["DX9_LFI"])
     try:
-        os.mkdir(output_folder)
+        os.mkdir(os.path.join(root_folder, "halfrings"))
     except:
         pass
 
@@ -113,9 +115,9 @@ def halfrings(freq, ch, surv, pol='I', smooth_combine_config=None, degraded_nsid
     else:
         chtag = str(freq)
 
-    base_filename = os.path.join(output_folder, "%s_SS%s" % (chtag, str(surv)))
+    base_filename = os.path.join("halfrings", "%s_SS%s" % (chtag, str(surv)))
     if log_to_file:
-        configure_file_logger(base_filename)
+        configure_file_logger(os.path.join(root_folder, base_filename))
     log.info("Start logging")
 
     if not read_masks is None:
@@ -134,15 +136,16 @@ def halfrings(freq, ch, surv, pol='I', smooth_combine_config=None, degraded_nsid
              (mapreader(freq, surv, ch, halfring=2, pol=pol), -.5)],
               base_filename=base_filename,
               metadata=metadata,
+              root_folder=root_folder,
               smooth_mask=ps_mask,
               spectra_mask=gal_mask,
             **smooth_combine_config)
     return 1
 
-def surveydiff(freq, ch, survlist=[1,2,3,4,5], pol='I', output_folder="survdiff/", mapreader=None, smooth_combine_config=None, read_masks=None, log_to_file=True):
+def surveydiff(freq, ch, survlist=[1,2,3,4,5], pol='I', root_folder="out/", smooth_combine_config=None, read_masks=None, log_to_file=False):
     """Survey differences"""
     try:
-        os.mkdir(output_folder)
+        os.mkdir(os.path.join(root_folder, "surveydiff"))
     except:
         pass
 
@@ -152,7 +155,7 @@ def surveydiff(freq, ch, survlist=[1,2,3,4,5], pol='I', output_folder="survdiff/
         chtag = str(freq)
 
     if log_to_file:
-        configure_file_logger(os.path.join(output_folder, "%s_SSdiff" % chtag))
+        configure_file_logger(os.path.join(root_folder, "surveydiff", "%s_SSdiff" % chtag))
 
     mapreader = SingleFolderDXReader(os.environ["DX9_LFI"])
     # read all maps
@@ -175,22 +178,29 @@ def surveydiff(freq, ch, survlist=[1,2,3,4,5], pol='I', output_folder="survdiff/
         if comb[1] % 2 != 0 and comb[0] % 2 == 0:
             comb = (comb[1], comb[0])
 
-        metadata["title"]="Survey difference SS%s-SS%s ch %s" % (str(comb[0])[:4], str(comb[1])[:4], chtag),
+        metadata["title"]="Survey difference SS%s-SS%s ch %s" % (str(comb[0])[:4], str(comb[1])[:4], chtag)
         smooth_combine(
                 [ (maps[comb[0]],  .5),
                   (maps[comb[1]], -.5) ],
-                base_filename=os.path.join(output_folder, "%s_SS%d-SS%d" % (chtag, comb[0], comb[1])) ,
+                base_filename=os.path.join("surveydiff", "%s_SS%d-SS%d" % (chtag, comb[0], comb[1])) ,
+                root_folder=root_folder,
                 metadata=metadata,
               smooth_mask=ps_mask,
               spectra_mask=gal_mask,
                 **smooth_combine_config )
     return 1
 
-def chdiff(freq, chlist, surv, pol='I', mapreader=None, smooth_combine_config=None, output_folder="chdiff/", read_masks=None, log_to_file=False):
+def chdiff(freq, chlist, surv, pol='I', smooth_combine_config=None, root_folder="out/", read_masks=None, log_to_file=False):
+
     try:
-        os.mkdir(output_folder)
+        os.mkdir(os.path.join(root_folder, "chdiff"))
     except:
         pass
+
+    base_filename=os.path.join("chdiff", "%d_SS%s" % (freq, surv))
+    if log_to_file:
+        configure_file_logger(os.path.join(root_folder, base_filename))
+
     mapreader = SingleFolderDXReader(os.environ["DX9_LFI"])
     # read all maps
     maps = dict([(ch, mapreader(freq, surv, ch, halfring=0, pol=pol)) for ch in chlist])
@@ -211,28 +221,10 @@ def chdiff(freq, chlist, surv, pol='I', mapreader=None, smooth_combine_config=No
         smooth_combine(
                 [ (maps[comb[0]],  .5),
                   (maps[comb[1]], -.5) ],
-                base_filename=os.path.join(output_folder, "%s-%s_SS%s" % (comb[0],   comb[1], surv)),
+                base_filename=os.path.join("chdiff", "%s-%s_SS%s" % (comb[0],   comb[1], surv)),
+                root_folder=root_folder,
                 metadata=metadata,
               smooth_mask=ps_mask,
               spectra_mask=gal_mask,
                 **smooth_combine_config )
     return 1
-
-if __name__ == "__main__":
-    log.root.level = log.DEBUG
-    from reader import SingleFolderDXReader
-    freq = 30
-    NSIDE = 1024
-
-    ps_mask = np.logical_not(np.floor(hp.ud_grade( 
-    hp.read_map(
-        glob(os.path.join(os.environ["DX9_LFI"], "MASKs",'mask_ps_%dGHz_*.fits' % freq))[0]), NSIDE))
-    )
-    gal_mask = np.logical_not(hp.read_map(
-        glob(os.path.join(os.environ["DX9_LFI"], "MASKs",'destriping_mask_%d.fits' % freq))[0])
-        )
-
-    mapreader = SingleFolderDXReader(os.environ["DX9_LFI"])
-    smooth_combine_config = dict(fwhm=np.radians(1.), degraded_nside=128,smooth_mask=ps_mask, spectra_mask=gal_mask)
-    halfrings(30, "", "nominal", pol='I', smooth_combine_config=smooth_combine_config, mapreader=mapreader, output_folder="halfrings/")
-    #surveydiff(30, "", survlist=[1,2], pol='I', output_folder="survdiff/", mapreader=mapreader, smooth_combine_config=smooth_combine_config)

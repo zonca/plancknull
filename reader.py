@@ -228,3 +228,4 @@ class DPCDX9Reader(BaseMapReader):
 
         log.info("Reading file {}".format(os.path.basename(filename)))
         return hp.ma(hp.read_map(filename, components))
+

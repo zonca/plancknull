@@ -109,6 +109,7 @@ def halfrings(freq, ch, surv, pol='I', smooth_combine_config=None, degraded_nsid
     metadata = dict( 
         file_type="halfring_%s" % (type_of_channel_set(ch),),
         channel=chtag,
+        survey=surv,
         title="Halfring difference survey %s ch %s" % (str(surv), chtag),
         )
     smooth_combine(
@@ -157,7 +158,7 @@ def surveydiff(freq, ch, survlist=[1,2,3,4,5], pol='I', output_folder="survdiff/
                 [ (maps[comb[0]],  .5),
                   (maps[comb[1]], -.5) ],
                 base_filename=os.path.join(output_folder, "%s_SS%d-SS%d" % (chtag, comb[0], comb[1])) ,
-                metadata=metadata,
+                metadata=dict(metadata.items() + {"surveys": comb}),
               smooth_mask=ps_mask,
               spectra_mask=gal_mask,
                 **smooth_combine_config )
@@ -178,6 +179,7 @@ def chdiff(freq, chlist, surv, pol='I', mapreader=None, smooth_combine_config=No
 
     metadata = dict( 
         file_type="chdiff",
+        survey=surv
         )
 
     combs = list(itertools.combinations(chlist, 2))

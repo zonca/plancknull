@@ -1,8 +1,8 @@
-Batch run of null tests for Planck/LFI
-======================================
+Null tests library for Planck
+=============================
 
-The code in this repository runs a number of null tests on the
-products of a Planck/LFI Data eXchange (DX).
+This code provides a library and example scripts to run
+null tests on the products of a Planck Data eXchange (DX).
 
 Overview
 --------

@@ -44,7 +44,7 @@ Parallelization
 
 The code is trivially parallel, parallelization is achieved using `ipython` cluster computing features.
 
-See [`ipython` documentation][http://ipython.org/ipython-doc/stable/install/install.html#dependencies-for-ipython-parallel-parallel-computing] for installing it, it requires to build `libzmq` and install `pyzmq`.
+See [`ipython` documentation](http://ipython.org/ipython-doc/stable/install/install.html#dependencies-for-ipython-parallel-parallel-computing) for installing it, it requires to build `libzmq` and install `pyzmq`.
 
 Once `ipython` is installed, you can just:
  * run `ipcontroller` on the login node

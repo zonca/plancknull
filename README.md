@@ -13,7 +13,7 @@ This repository provides a library for interactive and serial usage:
 
 and an example script for LFI DX9 that can run either in parallel or serial:
 
-* `run_lfidx9.py` 
+* `run_lfidx9_ipy.py` 
 
 Once the tests have been executed, the user can produce a HTML report
 using

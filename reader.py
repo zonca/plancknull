@@ -8,6 +8,16 @@ import re
 
 stokes = "IQU"
 
+def type_of_channel_set(ch):
+    """Returns a string that identifies the set of channels"""
+    if ch == "":
+        return "frequency"
+    elif ch.find('_') >= 0:
+        return "detset"
+    else:
+        return "single_ch"
+
+
 class BaseMapReader:
     """Abstract class, all readers should provide this
     interface"""

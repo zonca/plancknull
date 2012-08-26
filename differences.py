@@ -4,9 +4,8 @@ import exceptions
 import itertools
 import numpy as np
 import logging as log
-from glob import glob
 import healpy as hp
-from reader import SingleFolderDXReader
+from reader import SingleFolderDXReader, type_of_channel_set
 
 def configure_file_logger(base_filename):
     rl = log.root
@@ -18,8 +17,36 @@ def configure_file_logger(base_filename):
         rl.removeHandler(h)
     rl.addHandler( handler )
 
-def smooth_combine(maps_and_weights, fwhm=np.radians(2.0), degraded_nside=32, spectra=False, smooth_mask=False, spectra_mask=False, plot=True, base_filename="out", root_folder=".", metadata={}):
-    """Combine, smooth, take-spectra, write metadata"""
+def smooth_combine(maps_and_weights, fwhm=np.radians(2.0), degraded_nside=32, spectra=False, smooth_mask=False, spectra_mask=False, base_filename="out", root_folder=".", metadata={}):
+    """Combine, smooth, take-spectra, write metadata
+
+    The maps (I or IQU) are first combined with their own weights, then smoothed and degraded.
+    This function writes a combined smoothed and degraded map, a spectra 1 or 6 components (not degraded) and a json file with metadata
+    
+    Parameters
+    ----------
+    maps_and_weights : list of tuples
+        [(map1_array, map1_weight), (map2_array, map2_weight), ...]
+        each tuple contains a I or IQU map to be combined with its own weight to give the final map
+    fwhm : double
+        smoothing gaussian beam width in radians
+    degraded_nside : integer
+        nside of the output map
+    spectra : bool
+        whether to compute and write angular power spectra of the combined map
+    smooth_mask, spectra_mask : bool array
+        masks for smoothing and spectra, same nside of input maps, masks shoud be true *inside* the masked region. spectra are masked with both masks. Typically smooth_mask should be a point source mask, while spectra_mask a galaxy plane mask.
+    base_filename : string
+        base filename of the output files
+    root_folder : string
+        root path of the output files
+    metadata : dict
+        initial state of the metadata to be written to the json files
+
+    Returns
+    -------
+    None : all outputs are written to fits files
+    """
 
     # check if I or IQU
     is_IQU = len(maps_and_weights[0][0]) == 3
@@ -55,26 +82,27 @@ def smooth_combine(maps_and_weights, fwhm=np.radians(2.0), degraded_nside=32, sp
     log.debug("Write fits map: " + base_filename + "_map.fits")
     hp.write_map(os.path.join(root_folder, base_filename + "_map.fits"), smoothed_map)
 
-    # spectra
-    log.debug("Anafast")
-    for m in combined_map:
-        m.mask |= spectra_mask
-    cl = hp.anafast(combined_map)
-    # write spectra
-    log.debug("Write cl: " + base_filename + "_cl.fits")
-    try:
-        hp.write_cl(os.path.join(root_folder, base_filename + "_cl.fits"), cl)
-    except exceptions.NotImplementedError:
-        log.error("Write IQU Cls to fits requires more recent version of healpy")
-    del cl
-
     # metadata
     metadata["base_file_name"] = base_filename
     metadata["file_name"] = base_filename + "_cl.fits"
     metadata["file_type"] += "_cl"
 
-    with open(os.path.join(root_folder, base_filename + "_cl.json"), 'w') as f:
-        json.dump(metadata, f)
+    if spectra:
+        # spectra
+        log.debug("Anafast")
+        for m in combined_map:
+            m.mask |= spectra_mask
+        cl = hp.anafast(combined_map)
+        # write spectra
+        log.debug("Write cl: " + base_filename + "_cl.fits")
+        try:
+            hp.write_cl(os.path.join(root_folder, base_filename + "_cl.fits"), cl)
+        except exceptions.NotImplementedError:
+            log.error("Write IQU Cls to fits requires more recent version of healpy")
+        del cl
+
+        with open(os.path.join(root_folder, base_filename + "_cl.json"), 'w') as f:
+            json.dump(metadata, f)
 
     metadata["file_name"] = base_filename + "_map.fits"
     metadata["file_type"] = metadata["file_type"].replace("_cl","_map")
@@ -92,15 +120,6 @@ def smooth_combine(maps_and_weights, fwhm=np.radians(2.0), degraded_nside=32, sp
     with open(os.path.join(root_folder, base_filename + "_map.json"), 'w') as f:
         json.dump(metadata, f)
 
-
-def type_of_channel_set(ch):
-    """Returns a string that identifies the set of channels"""
-    if ch == "":
-        return "frequency"
-    elif ch.find('_') >= 0:
-        return "detset"
-    else:
-        return "single_ch"
 
 def halfrings(freq, ch, surv, pol='I', smooth_combine_config=None, degraded_nside=None, root_folder="out/", read_masks=None,log_to_file=False):
     """Half ring differences"""
@@ -142,7 +161,6 @@ def halfrings(freq, ch, surv, pol='I', smooth_combine_config=None, degraded_nsid
               smooth_mask=ps_mask,
               spectra_mask=gal_mask,
             **smooth_combine_config)
-    return 1
 
 def surveydiff(freq, ch, survlist=[1,2,3,4,5], pol='I', root_folder="out/", smooth_combine_config=None, read_masks=None, log_to_file=False):
     """Survey differences"""
@@ -190,7 +208,6 @@ def surveydiff(freq, ch, survlist=[1,2,3,4,5], pol='I', root_folder="out/", smoo
               smooth_mask=ps_mask,
               spectra_mask=gal_mask,
                 **smooth_combine_config )
-    return 1
 
 def chdiff(freq, chlist, surv, pol='I', smooth_combine_config=None, root_folder="out/", read_masks=None, log_to_file=False):
 
@@ -230,4 +247,3 @@ def chdiff(freq, chlist, surv, pol='I', smooth_combine_config=None, root_folder=
               smooth_mask=ps_mask,
               spectra_mask=gal_mask,
                 **smooth_combine_config )
-    return 1

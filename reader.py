@@ -12,30 +12,8 @@ class BaseMapReader:
     """Abstract class, all readers should provide this
     interface"""
 
-    def __call__(self, freq, surv, nside=None, chtag='', halfring=0, pol='I'):
-        """Read a map and return the array of pixels.
-        
-        Parameters
-        ----------
-        freq : int
-            frequency
-        surv : int or string
-            "nominal", "full", or survey number
-        nside : None or int
-            if None matches any nside, otherwise integer nside
-        chtag : string 
-            can be "" for frequency, radiometer("LFI18S"), horn("LFI18"), quadruplet("18_23"), detset("detset_1")
-        halfring : int
-            0 for full, 1 and 2 for first and second halfrings
-        pol : string
-            required polarization components, e.g. 'I', 'Q', 'IQU'
-
-        Returns
-        -------
-        maps : array or tuple of arrays
-            single map or tuple of maps as returned by healpy.read_map
-
-        """
+    def __call__(self, freq, surv, chtag='', nside=None, halfring=0, pol="I"):
+        """See docstrings of the child classes"""
         return np.zeros(hp.nside2npix(1024))
 
 class SingleFolderDXReader(BaseMapReader):
@@ -45,6 +23,28 @@ class SingleFolderDXReader(BaseMapReader):
         self.folder = folder
 
     def __call__(self, freq, surv, chtag='', nside=None, halfring=0, pol="I"):
+        """Read a map and return the array of pixels.
+        
+        Parameters
+        ----------
+        freq : int
+            frequency
+        surv : int or string
+            "nominal", "full", or survey number
+        chtag : string 
+            can be "" for frequency, radiometer("LFI18S"), horn("LFI18"), quadruplet("18_23"), detset("detset_1")
+        nside : None or int
+            if None matches any nside, otherwise integer nside
+        halfring : int
+            0 for full, 1 and 2 for first and second halfrings
+        pol : string
+            required polarization components, e.g. 'I', 'Q', 'IQU'
+
+        Returns
+        -------
+        maps : array or tuple of arrays
+            single map or tuple of maps as returned by healpy.read_map
+        """
         # stokes component
         components = [stokes.index(p) for p in pol]
         if len(components) == 1:
@@ -228,4 +228,3 @@ class DPCDX9Reader(BaseMapReader):
 
         log.info("Reading file {}".format(os.path.basename(filename)))
         return hp.ma(hp.read_map(filename, components))
-

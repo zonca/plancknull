@@ -121,8 +121,28 @@ def smooth_combine(maps_and_weights, fwhm=np.radians(2.0), degraded_nside=32, sp
         json.dump(metadata, f)
 
 
-def halfrings(freq, ch, surv, pol='I', smooth_combine_config=None, degraded_nside=None, root_folder="out/", read_masks=None,log_to_file=False):
-    """Half ring differences"""
+def halfrings(freq, ch, surv, pol='I', smooth_combine_config=None, root_folder="out/", read_masks=None,log_to_file=False):
+    """Half ring differences
+    
+    Parameters
+    ----------
+    freq : integer
+        channels frequency
+    chtag : string 
+        can be "" for frequency, radiometer("LFI18S"), horn("LFI18"), quadruplet("18_23"), detset("detset_1")
+    surv : int or string
+        "nominal", "full", or survey number
+    pol : string
+        required polarization components, e.g. 'I', 'Q', 'IQU'
+    smooth_combine_config : dict
+        configuration for smooth_combine, see its docstring
+    root_folder : string
+        root path of the output files
+    read_masks : function
+        function which returns the 2 masks to be used for smoothing and spectra, this is need for parallelization with ipython, the input must be the function itself, i.e. without calling it with ()
+    log_to_file : bool
+        whether log to file
+    """
 
     mapreader = SingleFolderDXReader(os.environ["DX9_LFI"])
     try:
@@ -163,7 +183,16 @@ def halfrings(freq, ch, surv, pol='I', smooth_combine_config=None, degraded_nsid
             **smooth_combine_config)
 
 def surveydiff(freq, ch, survlist=[1,2,3,4,5], pol='I', root_folder="out/", smooth_combine_config=None, read_masks=None, log_to_file=False):
-    """Survey differences"""
+    """Survey differences
+
+    for a specific channel or channel set, produces all the possible combinations of the surveys in survlist
+    
+    Parameters
+    ----------
+    survlist : list of survey id (1..5, "nominal", "full")
+
+    see the halfrings function for other parameters
+    """
     try:
         os.mkdir(os.path.join(root_folder, "surveydiff"))
     except:
@@ -210,6 +239,16 @@ def surveydiff(freq, ch, survlist=[1,2,3,4,5], pol='I', root_folder="out/", smoo
                 **smooth_combine_config )
 
 def chdiff(freq, chlist, surv, pol='I', smooth_combine_config=None, root_folder="out/", read_masks=None, log_to_file=False):
+    """Channel difference
+
+    for a specific survey, produces all the possible combinations of the channels in chlist
+    
+    Parameters
+    ----------
+    chlist : list of channel tags (see reader or halfrings documentation)
+
+    see the halfrings function for other parameters
+    """
 
     try:
         os.mkdir(os.path.join(root_folder, "chdiff"))

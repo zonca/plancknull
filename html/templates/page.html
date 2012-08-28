@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block page_title %}{{page_title}}{% endblock %}
+
+{% block content %}
+
+<p> All images smoothed to 1 degree and plotted with linear color scale +- 30 microK </p>
+
+{% for table in table_list %}
+    <a name="{{ table.tag }}"><h2>{{ table.title }}</h2></a>
+    <table class="table table-hover table-condensed">
+    <tr>
+        {% if table.rows.0.tag %}
+    <th></th>
+        {% endif %}
+    {% for label in table.labels %}
+    <th><p>{{label}}</p></th>    
+    {% endfor %}
+    </tr>
+    {% for row in table.rows %}
+        <tr>
+        {% if row.tag %}
+        <th><p>{{row.tag}}</p></th>
+        {% endif %}
+        {% for image in row.images %}
+            <td>
+            {% if image %} 
+            <a href="images/{{image.file_name}}.jpg" class="thumbnail"  id="{{image.tag}}" rel="prettyPhoto[{{table.tag}}]">
+                <p class="imgtag">{{image.tag}}</p>
+                <img title="{{image.title}}" alt="{{image.title}}"src="images/{{ image.file_name }}_thumb.jpg" />
+                </a>
+            {% else %}
+                <p>&nbsp;</p>
+            {% endif %}
+            </td>
+        {% endfor %}
+        </tr>
+    {% endfor %}
+    </table>
+{% endfor %}
+{% endblock %}

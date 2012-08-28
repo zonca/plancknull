@@ -1,0 +1,25 @@
+.table td, .table th {
+    text-align: center; /* center checkbox horizontally */
+    vertical-align: middle; /* center checkbox vertically */
+}
+
+.clicked {
+    border-color: black;
+}
+
+.table .imgtag {
+    display:none;
+}
+
+#output .imgtag {
+    display:block;
+    padding:0;
+    margin:0;
+}
+#output a {
+    display:block;
+    padding:0;
+    margin:0;
+    width:200px;
+    float:left;
+}

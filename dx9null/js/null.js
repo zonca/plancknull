@@ -11,9 +11,10 @@ $(document).ready(function(){
             createSelected();
     });
 
-    $(".nav a").click(function() {
-        $(this).parent("li.dropdown").addClass("active");
-    }) 
+    //$(".nav a").click(function() {
+    //    $(".active").removeClass("active");
+    //    $(this).parent("li.dropdown").addClass("active");
+    //}) 
 
     var output = $('#output');
 

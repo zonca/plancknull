@@ -4,6 +4,9 @@ import gc
 import matplotlib.pyplot as plt
 import json
 from glob import glob
+import sys
+sys.path.append("..")
+from reader import type_of_channel_set
 
 import healpy as hp
 
@@ -27,6 +30,27 @@ def plot_figure(metadata):
             plot_range = 30
         else:
             plot_range = 30
+        test_type = metadata["base_file_name"].split("/")[0]
+        if metadata["channel"].find("_") < 0:
+            try:
+                if int(metadata["channel"]) > 70:
+                    plot_range = 5
+                    if int(metadata["channel"]) >= 353:
+                        if comp in "QU":
+                            plot_range = 100
+                        else:
+                            plot_range = 30
+                    if int(metadata["channel"]) >= 545 and comp in "QU":
+                        plot_range = 1e6
+                    if int(metadata["channel"]) >= 857:
+                        plot_range = 1e4
+                        if comp in "QU":
+                            plot_range = 1e6
+                    if test_type == "surveydiff" and int(metadata["channel"]) >= 545 and comp == "Q":
+                        plot_range *= 1e2
+            except exceptions.ValueError:
+                pass
+
         fig = plt.figure(figsize=(9, 6), dpi=100)
         hp.mollview(m * 1e6, min=-plot_range, max=plot_range, unit="muK", title=metadata["title"] + " %s" % comp, xsize=900, hold=True)
         plt.savefig(os.path.join(out_folder, metadata["file_name"].replace(".fits", "_%s.jpg" % comp)), dpi=100)
@@ -43,6 +67,6 @@ for fold in ["halfrings", "surveydiff", "chdiff"]:
     except:
         pass
 
-for f in glob(os.path.join(root_folder, "*", "*map.json")):
+for f in glob(os.path.join(root_folder, "*", "[58]*map.json")):
     print f
     plot_figure(json.load(open(f)))

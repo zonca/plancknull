@@ -11,6 +11,10 @@ $(document).ready(function(){
             createSelected();
     });
 
+    $(".nav a").click(function() {
+        $(this).parent("li.dropdown").addClass("active");
+    }) 
+
     var output = $('#output');
 
     function createSelected()

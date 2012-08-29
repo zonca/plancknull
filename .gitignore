@@ -1,4 +1,9 @@
 *.py[co]
+dx9null/images/chdiff
+dx9null/images/halfrings
+dx9null/images/surveydiff
+dx9null/*html
+dx9
 *swp
 
 # Packages

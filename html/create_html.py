@@ -24,11 +24,15 @@ def chlist(freq):
 
 print "MENU"
 
-menu = [{"title":"Halfrings", "file":"index.html"}]
+freqs = [30,44,70, 100, 143, 217, 353, 545, 857]
 
-menu_item = {"title":"Survey Differences", "file":"surveydiff.html"}
-menu_item["links"] = [("%d_%s" % (freq, comp), "%dGHz %s" % (freq, comp))  for comp in "IQU" for freq in [30, 44, 70]]
-menu.append(menu_item)
+menu = [{"title":"Halfrings", "file":"index.html",
+"links" : [("%d" % freq, "%dGHz" % freq) for freq in freqs]}]
+
+for comp in "IQU":
+    menu_item = {"title":"Survey Differences %s" % comp, "file":"surveydiff_%s.html" % comp}
+    menu_item["links"] = [("%d_%s" % (freq, comp), "%dGHz %s" % (freq, comp))  for freq in freqs]
+    menu.append(menu_item)
 
 menu_item = {"title":"Horn Differences", "file":"horndiff.html"}
 menu_item["links"] = [("%d_SS1" % freq, "%dGHz" % freq) for freq in [30, 44, 70]]
@@ -42,7 +46,6 @@ except exceptions.RuntimeError:
 print "HALFRINGS"
 
 survs = ["nominal", "full"]
-freqs = [30,44,70]
 table_list = []
 for freq in freqs:
     chtags = [""]
@@ -86,14 +89,14 @@ def swap_surv(comb):
         return comb
 
 survs = [1,2,3,4,5]
-freqs = [30, 44, 70]
-table_list = []
 for comp in "IQU":
+    table_list = []
     for freq in freqs:
         chtags = [""]
         if freq == 70:
             chtags += ["18_23", "19_22", "20_21"]
-        chtags += chlist(freq)
+        if freq < 100:
+            chtags += chlist(freq)
         for ch in chtags:
             if ch and ch.find("_") < 0 and comp in "QU":
                 pass
@@ -102,7 +105,7 @@ for comp in "IQU":
                     chtag = ch
                 else:
                     chtag = str(freq)
-                table = {"title":chtag + " %s" % comp, "tag":chtag  + "_%s" % comp, "labels":map(str, survs[:-1])}
+                table = {"title":chtag + " %s" % comp, "tag":chtag  + "_%s" % comp, "labels":map(str, survs[1:])}
                 table["rows"] = []
                 for surv in survs[:-1]:
                     row = {"tag":str(surv), "images":[]}
@@ -118,14 +121,14 @@ for comp in "IQU":
                     table["rows"].append(row)
                 table_list.append(table)
 
-t = loader.get_template(template_name="page.html")
-c = Context({
-            'page_title': 'Survey differences',
-            'table_list': table_list,
-            'menu':menu
-            })
+    t = loader.get_template(template_name="page.html")
+    c = Context({
+                'page_title': 'Survey differences %s' % comp,
+                'table_list': table_list,
+                'menu':menu
+                })
 
-write_html("surveydiff.html", t, c)
+    write_html("surveydiff_%s.html" % comp, t, c)
 
 print "CHDIFF"
 survs = [1,2,3,4,5]

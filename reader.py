@@ -32,7 +32,7 @@ class SingleFolderDXReader(BaseMapReader):
     def __init__(self, folder):
         self.folder = folder
 
-    def __call__(self, freq, surv, chtag='', nside=None, halfring=0, pol="I"):
+    def __call__(self, freq, surv, chtag='', nside=None, halfring=0, pol="I", bp_corr=False):
         """Read a map and return the array of pixels.
         
         Parameters
@@ -122,12 +122,21 @@ class SingleFolderDXReader(BaseMapReader):
             log.info("Reading %s" % os.path.basename(filename))
             output_map.append(hp.ma(hp.read_map(filename, components)))
 
+        if bp_corr:
+            bp_corr_filename = "iqu_bandpass_correction_%d" % freq
+            if surv in ["nominal", "full"]:
+                bp_corr_filename += surv + "survey"
+            else:
+                bp_corr_filename += surv.replace("survey_", "ss")
+            bp_corr_filename += ".fits"
+            log.info("Applying bandpass correction: " + bp_corr_filename)
+            output_map[0] += hp.ma(hp.read_map(os.path.join(folder, "bandpass_correction", bp_corr_filename)))
+
         if is_horn:
             log.info("Combining maps in horn map")
             return .5 * (output_map[0] + output_map[1])
         else:
             return output_map[0]
-
 
 class DPCDX9Reader(BaseMapReader):
     """All maps in a single folder, DX9 naming convention"""

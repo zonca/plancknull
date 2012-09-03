@@ -29,8 +29,9 @@ class BaseMapReader:
 class SingleFolderDXReader(BaseMapReader):
     """All maps in a single folder, DX9 naming convention"""
 
-    def __init__(self, folder):
+    def __init__(self, folder, nside=None):
         self.folder = folder
+        self.nside = nside
 
     def __call__(self, freq, surv, chtag='', nside=None, halfring=0, pol="I", bp_corr=False):
         """Read a map and return the array of pixels.
@@ -136,9 +137,13 @@ class SingleFolderDXReader(BaseMapReader):
 
         if is_horn:
             log.info("Combining maps in horn map")
-            return .5 * (output_map[0] + output_map[1])
+            out = .5 * (output_map[0] + output_map[1])
         else:
-            return output_map[0]
+            out = output_map[0]
+
+        if self.nside:
+            out = hp.ud_grade(out, self.nside)
+        return out
 
 class DPCDX9Reader(BaseMapReader):
     """All maps in a single folder, DX9 naming convention"""

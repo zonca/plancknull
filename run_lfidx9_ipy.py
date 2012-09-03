@@ -6,6 +6,8 @@ import os
 from differences import halfrings, surveydiff, chdiff 
 from IPython.parallel import Client
 
+NSIDE = 1024
+
 def read_dpc_masks(freq):
     import numpy as np
     import os
@@ -13,12 +15,13 @@ def read_dpc_masks(freq):
     from glob import glob
     ps_mask = np.logical_not(np.floor(hp.ud_grade( 
     hp.read_map(
-        glob(os.path.join(os.environ["DX9_LFI"], "MASKs",'mask_ps_%dGHz_*.fits' % freq))[0]), 1024))
+        glob(os.path.join(os.environ["DX9_LFI"], "MASKs",'mask_ps_%dGHz_*.fits' % freq))[0]), NSIDE))
     ).astype(np.bool)
     gal_filename = glob(os.path.join(
         os.environ["DX9_LFI"], "MASKs",
         'destripingmask_%d.fits' % freq))[0]
-    gal_mask = np.logical_not(hp.read_map(gal_filename)).astype(np.bool)
+    gal_mask = np.logical_not(np.floor(hp.ud_grade( 
+    hp.read_map(gal_filename), NSIDE)).astype(np.bool))
     return ps_mask, gal_mask
 
 HORNS = {30:[27,28], 44:[24,25,26], 70:list(range(18,23+1))}
@@ -30,10 +33,9 @@ def chlist(freq):
         chs += ["LFI%dM" % horn, "LFI%dS" % horn]
     return chs
 
-NSIDE = 1024
 log.root.level = log.DEBUG
 
-paral = True
+paral = False
 if __name__ == '__main__':
 
     if paral:
@@ -42,9 +44,10 @@ if __name__ == '__main__':
         lview = tc.load_balanced_view() # default load-balanced view
 
     root_folder = "dx9"
-    run_halfrings = True
+    run_halfrings = False
     run_surveydiff = True
-    run_chdiff = True
+    run_chdiff = False
+    bp_corr = True
 
     if run_halfrings:
         print "HALFRINGS"
@@ -73,14 +76,16 @@ if __name__ == '__main__':
                 chtags += ["18_23", "19_22", "20_21"]
             chtags += chlist(freq)
             for chtag in chtags:
+                if bp_corr and chtag: # no corr for single ch
+                    continue
                 if chtag and chtag.find("_") < 0:
                     pol='I'
                 else:
                     pol="IQU"
                 if paral:
-                    tasks.append(lview.apply_async(surveydiff,freq, chtag, survs, pol=pol, smooth_combine_config=smooth_combine_config, root_folder=root_folder,read_masks=read_dpc_masks,log_to_file=True))
+                    tasks.append(lview.apply_async(surveydiff,freq, chtag, survs, pol=pol, smooth_combine_config=smooth_combine_config, root_folder=root_folder,read_masks=read_dpc_masks,log_to_file=True, bp_corr=bp_corr))
                 else:
-                    surveydiff(freq, chtag, survs, pol=pol, smooth_combine_config=smooth_combine_config, root_folder=root_folder,read_masks=read_dpc_masks,log_to_file=True)
+                    surveydiff(freq, chtag, survs, pol=pol, smooth_combine_config=smooth_combine_config, root_folder=root_folder,read_masks=read_dpc_masks,log_to_file=False, bp_corr=bp_corr)
 
     if run_chdiff:
         print "CHDIFF"

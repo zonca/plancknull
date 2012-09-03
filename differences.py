@@ -147,7 +147,7 @@ def halfrings(freq, ch, surv, pol='I', smooth_combine_config=None, root_folder="
         whether log to file
     """
 
-    mapreader = SingleFolderDXReader(os.environ["DX9_HFI"])
+    mapreader = SingleFolderDXReader(os.environ["DX9_LFI"])
     try:
         os.mkdir(os.path.join(root_folder, "halfrings"))
     except:
@@ -185,7 +185,7 @@ def halfrings(freq, ch, surv, pol='I', smooth_combine_config=None, root_folder="
               spectra_mask=gal_mask,
             **smooth_combine_config)
 
-def surveydiff(freq, ch, survlist=[1,2,3,4,5], pol='I', root_folder="out/", smooth_combine_config=None, read_masks=None, log_to_file=False):
+def surveydiff(freq, ch, survlist=[1,2,3,4,5], pol='I', root_folder="out/", smooth_combine_config=None, read_masks=None, log_to_file=False, bp_corr=False):
     """Survey differences
 
     for a specific channel or channel set, produces all the possible combinations of the surveys in survlist
@@ -209,9 +209,9 @@ def surveydiff(freq, ch, survlist=[1,2,3,4,5], pol='I', root_folder="out/", smoo
     if log_to_file:
         configure_file_logger(os.path.join(root_folder, "surveydiff", "%s_SSdiff" % chtag))
 
-    mapreader = SingleFolderDXReader(os.environ["DX9_HFI"])
+    mapreader = SingleFolderDXReader(os.environ["DX9_LFI"])
     # read all maps
-    maps = dict([(surv, hp.ud_grade(mapreader(freq, surv, ch, halfring=0, pol=pol), 256)) for surv in survlist])
+    maps = dict([(surv, mapreader(freq, surv, ch, halfring=0, pol=pol, bp_corr=bp_corr)) for surv in survlist])
 
 
     if not read_masks is None:
@@ -231,10 +231,14 @@ def surveydiff(freq, ch, survlist=[1,2,3,4,5], pol='I', root_folder="out/", smoo
             comb = (comb[1], comb[0])
 
         metadata["title"]="Survey difference SS%s-SS%s ch %s" % (str(comb[0])[:4], str(comb[1])[:4], chtag)
+        base_filename = os.path.join("surveydiff", "%s_SS%d-SS%d" % (chtag, comb[0], comb[1]))
+        if bp_corr:
+            metadata["title"] += " BPCORR"
+            base_filename += "_bpcorr"
         smooth_combine(
                 [ (maps[comb[0]],  .5),
                   (maps[comb[1]], -.5) ],
-                base_filename=os.path.join("surveydiff", "%s_SS%d-SS%d" % (chtag, comb[0], comb[1])) ,
+                base_filename=base_filename,
                 root_folder=root_folder,
                 metadata=dict(metadata.items() + {"surveys": comb}.items()),
               smooth_mask=ps_mask,
@@ -262,7 +266,7 @@ def chdiff(freq, chlist, surv, pol='I', smooth_combine_config=None, root_folder=
     if log_to_file:
         configure_file_logger(os.path.join(root_folder, base_filename))
 
-    mapreader = SingleFolderDXReader(os.environ["DX9_HFI"])
+    mapreader = SingleFolderDXReader(os.environ["DX9_LFI"])
     # read all maps
     maps = dict([(ch, mapreader(freq, surv, ch, halfring=0, pol=pol)) for ch in chlist])
 

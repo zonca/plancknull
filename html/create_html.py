@@ -47,6 +47,7 @@ print "HALFRINGS"
 
 survs = ["nominal", "full"]
 table_list = []
+summary_table = {"labels":[], "rows":[], "labels_done":False}
 for freq in freqs:
     chtags = [""]
     if freq == 70:
@@ -59,6 +60,7 @@ for freq in freqs:
         for surv in survs:
             table = {"title":chtag + " SS %s" % str(surv), "tag":chtag, "labels":"IQU"}
             table["rows"] = []
+            summary_row = dict(tag=table["title"], numslinks=[])
             row = {"images":[]}
             f=os.path.join(root_folder, "halfrings", "%s_SS%s_map.json" % (chtag, str(surv)))
             metadata = json.load(open(f))
@@ -67,14 +69,23 @@ for freq in freqs:
                     "file_name" : metadata["base_file_name"] + "_map_%s" % comp,
                     "tag" : metadata["base_file_name"].replace("/","_") + "_%s" % comp,
                     })
+                if not summary_table["labels_done"]:
+                    summary_table["labels"].append(comp)
+                try:
+                    summary_row["numslinks"].append((float(metadata["map_std_%s" % comp])*1.e6, row["images"][-1]["file_name"]))
+                except exceptions.KeyError:
+                    summary_row["numslinks"].append((float(metadata["map_std"])*1.e6,row["images"][-1]["file_name"] ))
             table["rows"].append(row)
             table_list.append(table)
+            summary_table["labels_done"] = True
+            summary_table["rows"].append(summary_row)
 
 
 t = loader.get_template(template_name="page.html")
 c = Context({
             'page_title': 'Halfrings',
             'table_list': table_list,
+            'summary_tables': [summary_table],
             'menu':menu
             })
 
@@ -88,9 +99,11 @@ def swap_surv(comb):
     else:
         return comb
 
+bp_tag = {True:"_bpcorr", False:''}
 survs = [1,2,3,4,5]
 for comp in "IQU":
     table_list = []
+    summary_table = {"labels":[], "rows":[], "labels_done":False}
     for freq in freqs:
         chtags = [""]
         if freq == 70:
@@ -98,33 +111,52 @@ for comp in "IQU":
         if freq < 100:
             chtags += chlist(freq)
         for ch in chtags:
-            if ch and ch.find("_") < 0 and comp in "QU":
-                pass
+            if ch or freq>70:
+                bp_corrs = [False]
             else:
-                if ch:
-                    chtag = ch
+                bp_corrs = [False, True]
+            for bp_corr in bp_corrs:
+                if ch and ch.find("_") < 0 and comp in "QU":
+                    pass
                 else:
-                    chtag = str(freq)
-                table = {"title":chtag + " %s" % comp, "tag":chtag  + "_%s" % comp, "labels":map(str, survs[1:])}
-                table["rows"] = []
-                for surv in survs[:-1]:
-                    row = {"tag":str(surv), "images":[]}
-                    for surv2 in survs[1:]:
-                        if surv2 <= surv:
-                            row["images"].append(None)
-                        else:
-                            comb = swap_surv((surv, surv2))
-                            metadata=json.load(open(os.path.join(root_folder, "surveydiff", "%s_SS%d-SS%d_map.json" % (chtag, comb[0], comb[1]))))
-                            row["images"].append({"file_name":metadata["base_file_name"] + "_map_%s" % comp, "title":metadata["title"] + " %s" % comp, 
-                    "tag" : metadata["base_file_name"].replace("/","_")+ "_%s" % comp,
-                                })
-                    table["rows"].append(row)
-                table_list.append(table)
+                    if ch:
+                        chtag = ch
+                    else:
+                        chtag = str(freq)
+                    table = {"title":chtag + " %s" % comp, "tag":chtag  + "_%s" % comp, "labels":map(str, survs[1:])}
+                    if bp_corr:
+                        table["title"] += " BPCORR"
+                    table["rows"] = []
+                    summary_row = dict(tag=table["title"], numslinks=[])
+                    for surv in survs[:-1]:
+                        row = {"tag":str(surv), "images":[]}
+                        for surv2 in survs[1:]:
+                            if surv2 <= surv:
+                                row["images"].append(None)
+                            else:
+                                comb = swap_surv((surv, surv2))
+                                if not summary_table["labels_done"]:
+                                    summary_table["labels"].append("SS%d-SS%d" % comb)
+                                metadata_filename = os.path.join(root_folder, "surveydiff", "%s_SS%d-SS%d%s_map.json" % (chtag, comb[0], comb[1], bp_tag[bp_corr]))
+                                metadata=json.load(open(metadata_filename))
+                                row["images"].append({"file_name":metadata["base_file_name"] + "_map_%s" % comp, "title":metadata["title"] + " %s" % comp, 
+                        "tag" : metadata["base_file_name"].replace("/","_")+ "_%s" % comp,
+                                    })
+                                try:
+                                    summary_row["numslinks"].append((float(metadata["map_std_%s" % comp])*1.e6, row["images"][-1]["file_name"]))
+                                except exceptions.KeyError:
+                                    summary_row["numslinks"].append((float(metadata["map_std"])*1.e6,row["images"][-1]["file_name"] ))
+
+                        table["rows"].append(row)
+                    table_list.append(table)
+                    summary_table["labels_done"] = True
+                    summary_table["rows"].append(summary_row)
 
     t = loader.get_template(template_name="page.html")
     c = Context({
                 'page_title': 'Survey differences %s' % comp,
                 'table_list': table_list,
+                'summary_tables': [summary_table],
                 'menu':menu
                 })
 
@@ -135,11 +167,14 @@ survs = [1,2,3,4,5]
 freqs = [30, 44, 70]
     
 table_list = []
+summary_tables = []
 for freq in freqs:
+    summary_table = {"tag":freq, "labels":[], "rows":[], "labels_done":False}
     for surv in survs:
         horns = ["LFI%d" % h for h in HORNS[freq]]
         table = {"title":"%dGHz SS%s" % (freq, str(surv)), "tag":"%d_SS%s" % (freq, str(surv)), "labels":map(str, horns[1:])}
         table["rows"] = []
+        summary_row = dict(tag=table["title"], numslinks=[])
         for hornn, horn in enumerate(horns[:-1]):
             row = {"tag":str(horn), "images":[]}
             for horn2n, horn2 in enumerate(horns[1:]):
@@ -148,17 +183,27 @@ for freq in freqs:
                     row["images"].append(None)
                 else:
                     comb = (horn, horn2)
+                    if not summary_table["labels_done"]:
+                        summary_table["labels"].append("%s-%s" % tuple(map(str, comb)))
                     metadata=json.load(open(os.path.join(root_folder, "chdiff", "%s-%s_SS%s_map.json" % (comb[0], comb[1], str(surv)))))
                     row["images"].append({"file_name":metadata["base_file_name"] + "_map_I", "title":metadata["title"], 
                     "tag" : metadata["base_file_name"].replace("/","_"),
                         })
+                    try:
+                        summary_row["numslinks"].append((float(metadata["map_std_%s" % comp])*1.e6, row["images"][-1]["file_name"]))
+                    except exceptions.KeyError:
+                        summary_row["numslinks"].append((float(metadata["map_std"])*1.e6,row["images"][-1]["file_name"] ))
             table["rows"].append(row)
         table_list.append(table)
+        summary_table["labels_done"] = True
+        summary_table["rows"].append(summary_row)
+    summary_tables.append(summary_table)
 
 t = loader.get_template(template_name="page.html")
 c = Context({
             'page_title': 'Horn differences',
             'table_list': table_list ,
+            'summary_tables': summary_tables,
             'menu':menu
 
             })

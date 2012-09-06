@@ -6,9 +6,43 @@
 
 <p> All images smoothed to 1 degree and plotted with linear color scale, LFI = +- 30 microK, HFI +- 5 microK up to 217GHz then variable</p>
 
+<a name="summary"><h2>Summary table</h2></a>
+
+<p>Difference map (after smoothing) standard deviation (Chi-square planned for next version) in microK, click on the table cell to popup the map <br />
+Change colors threshold:
+  Orange: <input type="text" name="orange" id="orange" value="15" class="updatesummarycolor" />
+  Red: <input type="text" name="red" id="red"/ value="20" class="updatesummarycolor" >
+</p>
+{% for summary_table in summary_tables %}
+<table class="table table-hover table-condensed summarytable">
+    <tr>
+        {% if summary_table.rows.0.tag %}
+    <th></th>
+        {% endif %}
+    {% for label in summary_table.labels %}
+        <th><p>{{label}}</p></th>    
+    {% endfor %}
+    </tr>
+    {% for row in summary_table.rows %}
+        <tr>
+        {% if row.tag %}
+            <th><p>{{row.tag}}</p></th>
+        {% endif %}
+        {% for numlink in row.numslinks %}
+            <td>
+            <a href="images/{{numlink.1}}.jpg" class="thumbnail"  rel="prettyPhoto">
+                {{numlink.0|floatformat:2}}
+            </a>
+            </td>
+        {% endfor %}
+        </tr>
+    {% endfor %}
+</table>
+{% endfor %}
+
 {% for table in table_list %}
     <a name="{{ table.tag }}"><h2>{{ table.title }}</h2></a>
-    <table class="table table-hover table-condensed">
+    <table class="table table-hover table-condensed mapstable">
     <tr>
         {% if table.rows.0.tag %}
     <th></th>

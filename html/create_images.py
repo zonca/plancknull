@@ -18,8 +18,6 @@ try:
 except:
     pass
 
-print "HALFRINGS"
-
 def plot_figure(metadata):
     try:
         allmap = hp.ma(hp.read_map(os.path.join(root_folder, metadata["file_name"]), (0,1,2)))
@@ -67,6 +65,6 @@ for fold in ["halfrings", "surveydiff", "chdiff"]:
     except:
         pass
 
-for f in glob(os.path.join(root_folder, "*", "[58]*map.json")):
+for f in glob(os.path.join(root_folder, "*", "*bpcorr*map.json")):
     print f
     plot_figure(json.load(open(f)))

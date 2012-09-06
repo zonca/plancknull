@@ -39,6 +39,7 @@
                     <li><a href="{{menu_item.file}}">{{menu_item.title}}</b></a>
                     {% endif %}
               <ul class="dropdown-menu">
+                  <li><a href="{{menu_item.file}}#{{summary}}">Summary table</a></li>
                   {% for link in menu_item.links %} 
                   <li><a href="{{menu_item.file}}#{{link.0}}">{{link.1}}</a></li>
                   {% endfor %}

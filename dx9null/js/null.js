@@ -16,8 +16,6 @@ $(document).ready(function(){
     //    $(this).parent("li.dropdown").addClass("active");
     //}) 
 
-    var output = $('#output');
-
     function createSelected()
     {
         var output = $('#output');
@@ -43,7 +41,7 @@ $(document).ready(function(){
 
     createSelected();
 
-    $('a.thumbnail').mousedown(function(e){
+    $('.mapstable a.thumbnail').mousedown(function(e){
         if (e.which == 3) {
             var $img = $(this).toggleClass('clicked');
             var $imgId = $img.attr('id');
@@ -64,4 +62,23 @@ $(document).ready(function(){
             createSelected();
         }
     });
+
+    function colorSummaryTable()
+    {
+        // color summary table
+        $('.summarytable td').each(function() {
+            $(this).css('background-color', 'white');
+            var fValue = parseFloat($(this).text());
+            var orangeValue = parseFloat($('#orange').val());
+            if (fValue > orangeValue) {
+                $(this).css('background-color', 'orange');
+            };
+            var redValue = parseFloat($('#red').val());
+            if (fValue > redValue) {
+                $(this).css('background-color', 'red');
+            };
+        });
+    };
+    colorSummaryTable();
+    $('.updatesummarycolor').change(colorSummaryTable);
 });

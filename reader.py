@@ -176,7 +176,8 @@ class DPCDX9Reader(BaseMapReader):
 
         format_dict = {'freq': '',
                        'nside': '',
-                       'survey': ''}
+                       'survey': '',
+                       'halfring': ''}
 
         if freq in (30, 44, 70):
             format_dict['freq'] = freq
@@ -197,28 +198,48 @@ class DPCDX9Reader(BaseMapReader):
         else:
             raise ValueError("Unknown tag '{0}' for 'surv'".format(surv))
 
+        if halfring == 1:
+            format_dict['halfring'] = "ringhalf_1_"
+        elif halfring == 2:
+            format_dict['halfring'] = "ringhalf_2_"
+
         radiometer_match = radiometer_regex.match(chtag)
         horn_match = horn_regex.match(chtag)
         quadruplet_match = quadruplet_regex.match(chtag)
 
+        filenames = []
         if chtag == "":
             # We look for a frequency map
             if type(surv) is int:
                 base_path = os.path.join(base_path, "Surveys_DX9")
 
-            filename = glob(os.path.join(base_path,
-                                         "LFI_{freq}_{nside}_????????_{survey}.fits"
-                                         .format(**format_dict)))
+            filenames = glob(os.path.join(base_path,
+                                          "LFI_{freq}_{nside}_????????_{halfring}{survey}.fits"
+                                          .format(**format_dict)))
+
+            if len(filenames) > 1:
+                # Take the last one, as it is likely to be the most recent
+                filenames = [filenames.sorted()[-1]]
+
         elif radiometer_match:
             # We look for a radiometer map
-            filename = glob(os.path.join(base_path, "SINGLE_horn_Survey",
-                                         "LFI_{freq}_{nside}_????????_{rad}_{survey}.fits"
-                                         .format(rad=radiometer_match.group(1),
-                                                 **format_dict)))
-            pass
+            filenames = glob(os.path.join(base_path, "SINGLE_horn_Survey",
+                                          "LFI_{freq}_{nside}_????????_{rad}_{halfring}{survey}.fits"
+                                          .format(rad=radiometer_match.group(1),
+                                                  **format_dict)))
+
+            if len(filenames) > 1:
+                # Take the last one, as it is likely to be the most recent
+                filenames = [filenames.sorted()[-1]]
+
         elif horn_match:
             # We look for a horn map
-            raise RuntimeError("Horn maps are currently not delivered by the LFI DPC")
+            output_map = None
+            for rad in [horn_match.group(1) + arm for arm in ('M', 'S')]:
+                mask = ("LFI_{freq}_{nside}_????????_{rad}_{halfring}{survey}.fits"
+                        .format(rad=rad, **format_dict))
+                match = glob(os.path.join(base_path, "SINGLE_horn_Survey", mask))
+                filenames.append(sorted(match)[-1])
 
         elif quadruplet_match:
             # We look for a quadruplet map
@@ -227,23 +248,45 @@ class DPCDX9Reader(BaseMapReader):
             else:
                 base_path = os.path.join(base_path, "Couple_horn_Surveys_DX9")
 
-            filename = glob(os.path.join(base_path,
-                                         "LFI_{freq}_{nside}_????????_{quadruplet}_{survey}.fits"
-                                         .format(quadruplet=quadruplet_match.group(1),
-                                                 **format_dict)))
+            filenames = glob(os.path.join(base_path,
+                                          "LFI_{freq}_{nside}_????????_{quadruplet}_{halfring}{survey}.fits"
+                                          .format(quadruplet=quadruplet_match.group(1),
+                                                  **format_dict)))
 
-        if not filename:
+            if len(filenames) > 1:
+                # Take the last one, as it is likely to be the most recent
+                filenames = [filenames.sorted()[-1]]
+
+        if not filenames:
             raise RuntimeError(("Unable to find a match (freq: '{freq}', "
-                                "nside: '{nside}', survey: '{survey}')")
+                                "nside: '{nside}', survey: '{survey}', "
+                                "halfring: '{halfring}')")
                                .format(**format_dict))
-
-        if len(filename) > 1:
-            # Take the last one, as it is likely to be the most recent
-            filename = filename.sorted()[-1]
 
         components = [stokes.index(p) for p in pol]
         if len(components) == 1:
             components = components[0]
 
+<<<<<<< HEAD:reader.py
         log.info("Reading file {}".format(os.path.basename(filename)))
         return hp.ma(hp.read_map(filename, components))
+=======
+        output_map = None
+        for cur_filename in filenames:
+            log.info("Reading file {}".format(os.path.basename(cur_filename)))
+            
+            cur_map = hp.ma(hp.read_map(cur_filename, components))
+            if output_map is None:
+                output_map = cur_map
+            else:
+                if len(cur_map) == 1:
+                    output_map = output_map + cur_map
+                else:
+                    for idx in range(len(cur_map)):
+                        output_map[idx] = output_map[idx] + cur_map[idx]
+
+        if len(output_map) == 1:
+            return output_map * (1.0 / len(filename))
+        else:
+            return tuple([output_map[idx] * (1.0 / len(filename))
+                          for idx in range(len(output_map))])

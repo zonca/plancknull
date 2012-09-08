@@ -267,10 +267,6 @@ class DPCDX9Reader(BaseMapReader):
         if len(components) == 1:
             components = components[0]
 
-<<<<<<< HEAD:reader.py
-        log.info("Reading file {}".format(os.path.basename(filename)))
-        return hp.ma(hp.read_map(filename, components))
-=======
         output_map = None
         for cur_filename in filenames:
             log.info("Reading file {}".format(os.path.basename(cur_filename)))

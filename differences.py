@@ -88,7 +88,7 @@ def smooth_combine(maps_and_weights, fwhm=np.radians(2.0), degraded_nside=32, sp
     metadata["file_name"] = base_filename + "_cl.fits"
     metadata["file_type"] += "_cl"
     metadata["removed_monopole_I"] = monopole_I
-    metadata["dipole_I"] = dipole_I
+    metadata["dipole_I"] = tuple(dipole_I)
 
     if spectra:
         # spectra

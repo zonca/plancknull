@@ -69,8 +69,9 @@ def smooth_combine(maps_and_weights, fwhm=np.radians(2.0), degraded_nside=32, sp
     for m in combined_map:
         m.mask |= smooth_mask
 
+    monopole_I, dipole_I = hp.fit_dipole(combined_map[0], gal_cut=30)
     # remove monopole, only I
-    combined_map[0] -= hp.fit_monopole(combined_map[0], gal_cut=30)
+    combined_map[0] -= monopole_I
 
     # smooth
     log.debug("Smooth")
@@ -86,6 +87,8 @@ def smooth_combine(maps_and_weights, fwhm=np.radians(2.0), degraded_nside=32, sp
     metadata["base_file_name"] = base_filename
     metadata["file_name"] = base_filename + "_cl.fits"
     metadata["file_type"] += "_cl"
+    metadata["removed_monopole_I"] = monopole_I
+    metadata["dipole_I"] = dipole_I
 
     if spectra:
         # spectra

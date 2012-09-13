@@ -133,7 +133,7 @@ class SingleFolderDXReader(BaseMapReader):
             log.info("Applying bandpass correction: " + bp_corr_filename)
             corr_map = hp.ma(hp.read_map(os.path.join(folder, "bandpass_correction", bp_corr_filename), (0,1,2)))
             for comp, corr in zip(output_map[0], corr_map):
-                comp -= corr
+                comp += corr
 
         if is_horn:
             log.info("Combining maps in horn map")

@@ -38,9 +38,9 @@ class SingleFolderDXReader(BaseMapReader):
         result = []
         file_names = [
             glob(os.path.join(self.folder, "MASKs",
-                              'mask_ps_{}GHz_*.fits'.format(freq)))[-1],
+                              'mask_ps_{0}GHz_*.fits'.format(freq)))[-1],
             glob(os.path.join(self.folder, "MASKs",
-                              'destripingmask_{}.fits'.format(freq)))[-1]]
+                              'destripingmask_{0}.fits'.format(freq)))[-1]]
 
         for file_name in file_names:
             result.append(np.logical_not(np.floor(hp.ud_grade(hp.read_map(file_name), 1024)).astype(np.bool)))
@@ -169,8 +169,8 @@ class DPCDX9Reader(BaseMapReader):
         result = []
         file_names = [
             glob(os.path.join(self.folder, "MASKs",
-                              'mask_ps_{}GHz_*.fits'.format(freq)))[-1],
-            '/planck/sci_ops1/null_test_area/destriping_mask_{}.fits'.format(freq)]
+                              'mask_ps_{0}GHz_*.fits'.format(freq)))[-1],
+            '/planck/sci_ops1/null_test_area/destriping_mask_{0}.fits'.format(freq)]
 
         for file_name in file_names:
             log.info("Reading file '%s'", file_name)
@@ -308,7 +308,7 @@ class DPCDX9Reader(BaseMapReader):
 
         output_map = None
         for cur_filename in filenames:
-            log.info("Reading file {}".format(os.path.basename(cur_filename)))
+            log.info("Reading file {0}".format(os.path.basename(cur_filename)))
             
             cur_map = hp.ma(hp.read_map(cur_filename, components))
             if output_map is None:

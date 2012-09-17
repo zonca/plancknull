@@ -247,10 +247,10 @@ class DPCDX9Reader(BaseMapReader):
         if chtag == "":
             format_dict['map_type'] = 'frequency map'
             # We look for a frequency map
-            if type(surv) is int:
-                base_path = os.path.join(base_path, "Surveys_DX9")
-            elif halfring > 0:
+            if halfring > 0:
                 base_path = os.path.join(base_path, "JackKnife_DX9")
+            elif type(surv) is int:
+                base_path = os.path.join(base_path, "Surveys_DX9")
 
             filenames = glob(os.path.join(base_path,
                                           "LFI_{freq}_{nside}_????????_{halfring}{survey}.fits"
@@ -285,12 +285,12 @@ class DPCDX9Reader(BaseMapReader):
         elif quadruplet_match:
             format_dict['map_type'] = 'horn pair map'
             # We look for a quadruplet map
-            if surv in ("nominal", "full"):
+            if halfring > 0:
+                base_path = os.path.join(base_path, "JackKnife_DX9")
+            elif surv in ("nominal", "full"):
                 base_path = os.path.join(base_path, "Couple_horn_DX9")
             elif type(surv) is int:
                 base_path = os.path.join(base_path, "Couple_horn_Surveys_DX9")
-            elif halfring > 0:
-                base_path = os.path.join(base_path, "JackKnife_DX9")
 
             filenames = glob(os.path.join(base_path,
                                           "LFI_{freq}_{nside}_????????_{quadruplet}_{halfring}{survey}.fits"

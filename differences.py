@@ -149,7 +149,7 @@ def halfrings(freq, ch, surv, pol='I', smooth_combine_config=None, root_folder="
     """
 
     try:
-        os.mkdir(os.path.join(root_folder, "halfrings"))
+        os.makedirs(os.path.join(root_folder, "halfrings"))
     except:
         pass
 
@@ -193,7 +193,7 @@ def surveydiff(freq, ch, survlist=[1,2,3,4,5], pol='I', root_folder="out/", smoo
     see the halfrings function for other parameters
     """
     try:
-        os.mkdir(os.path.join(root_folder, "surveydiff"))
+        os.makedirs(os.path.join(root_folder, "surveydiff"))
     except:
         pass
 
@@ -255,7 +255,7 @@ def chdiff(freq, chlist, surv, pol='I', smooth_combine_config=None, root_folder=
     """
 
     try:
-        os.mkdir(os.path.join(root_folder, "chdiff"))
+        os.makedirs(os.path.join(root_folder, "chdiff"))
     except:
         pass
 

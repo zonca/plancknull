@@ -34,6 +34,19 @@ class SingleFolderDXReader(BaseMapReader):
         self.folder = folder
         self.nside = nside
 
+    def read_masks(self, freq):
+        result = []
+        file_names = [
+            glob(os.path.join(self.folder, "MASKs",
+                              'mask_ps_{}GHz_*.fits'.format(freq))),
+            glob(os.path.join(self.folder, "MASKs",
+                              'destripingmask_{}.fits'.format(freq)))]
+
+        for file_name in file_names:
+            result.append(np.logical_not(np.floor(hp.ud_grade(hp.read_map(file_name), 1024)).astype(np.bool)))
+
+        return tuple(result)
+
     def __call__(self, freq, surv, chtag='', halfring=0, pol="I", bp_corr=False):
         """Read a map and return the array of pixels.
         
@@ -152,7 +165,20 @@ class DPCDX9Reader(BaseMapReader):
     def __init__(self, folder):
         self.folder = folder
 
-    def __call__(self, freq, surv, chtag='', nside=None, halfring=0, pol="I"):
+    def read_masks(self, freq):
+        result = []
+        file_names = [
+            glob(os.path.join(self.folder, "MASKs",
+                              'mask_ps_{}GHz_*.fits'.format(freq))),
+            '/planck/sci_ops1/null_test_area/destriping_mask_{}.fits'.format(freq)]
+
+        for file_name in file_names:
+            result.append(np.logical_not(np.floor(hp.ud_grade(hp.read_map(file_name), 1024)).astype(np.bool)))
+
+        return tuple(result)
+
+    def __call__(self, freq, surv, chtag='', nside=None, halfring=0, pol="I",
+                 bp_corr = False):
         """Read a map and return the array of pixels.
         
         Parameters
@@ -290,10 +316,25 @@ class DPCDX9Reader(BaseMapReader):
                         output_map[idx] = output_map[idx] + cur_map[idx]
 
         if len(output_map) == 1:
-            return output_map * (1.0 / len(filename))
+            output_map = output_map * (1.0 / len(filenames))
         else:
-            return tuple([output_map[idx] * (1.0 / len(filename))
-                          for idx in range(len(output_map))])
+            output_map = tuple([output_map[idx] * (1.0 / len(filenames))
+                                for idx in range(len(output_map))])
+
+        # Apply the bandpass correction
+        if bp_corr:
+            bp_corr_filename = "iqu_bandpass_correction_%d_" % freq
+            if surv in ["nominal", "full"]:
+                bp_corr_filename += format_dict["survey"] + "survey"
+            else:
+                bp_corr_filename += format_dict["survey"].replace("survey_", "ss")
+            bp_corr_filename += ".fits"
+            log.info("Applying bandpass correction: " + bp_corr_filename)
+            corr_map = hp.ma(hp.read_map(os.path.join(self.folder, "IQU_Corrections_Maps", bp_corr_filename), (0,1,2)))
+            for comp, corr in zip(output_map[0], corr_map):
+                comp += corr
+
+        return output_map
 
 class SingleFolderToastReader(BaseMapReader):
     """All maps in a single folder, Toast naming convention"""

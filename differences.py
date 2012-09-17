@@ -127,7 +127,7 @@ def smooth_combine(maps_and_weights, fwhm=np.radians(2.0), degraded_nside=32, sp
         json.dump(metadata, f)
 
 
-def halfrings(freq, ch, surv, pol='I', smooth_combine_config=None, root_folder="out/", read_masks=None,log_to_file=False, mapreader=None):
+def halfrings(freq, ch, surv, pol='I', smooth_combine_config=None, root_folder="out/",log_to_file=False, mapreader=None):
     """Half ring differences
     
     Parameters
@@ -144,8 +144,6 @@ def halfrings(freq, ch, surv, pol='I', smooth_combine_config=None, root_folder="
         configuration for smooth_combine, see its docstring
     root_folder : string
         root path of the output files
-    read_masks : function
-        function which returns the 2 masks to be used for smoothing and spectra, this is need for parallelization with ipython, the input must be the function itself, i.e. without calling it with ()
     log_to_file : bool
         whether log to file
     """
@@ -164,10 +162,7 @@ def halfrings(freq, ch, surv, pol='I', smooth_combine_config=None, root_folder="
     if log_to_file:
         configure_file_logger(os.path.join(root_folder, base_filename))
 
-    if not read_masks is None:
-        ps_mask, gal_mask = read_masks(freq)
-    else:
-        ps_mask = None; gal_mask = None
+    ps_mask, gal_mask = mapreader.read_masks(freq)
 
     metadata = dict( 
         file_type="halfring_%s" % (reader.type_of_channel_set(ch),),
@@ -186,7 +181,7 @@ def halfrings(freq, ch, surv, pol='I', smooth_combine_config=None, root_folder="
               spectra_mask=gal_mask,
             **smooth_combine_config)
 
-def surveydiff(freq, ch, survlist=[1,2,3,4,5], pol='I', root_folder="out/", smooth_combine_config=None, read_masks=None, log_to_file=False, bp_corr=False, mapreader=None):
+def surveydiff(freq, ch, survlist=[1,2,3,4,5], pol='I', root_folder="out/", smooth_combine_config=None, log_to_file=False, bp_corr=False, mapreader=None):
     """Survey differences
 
     for a specific channel or channel set, produces all the possible combinations of the surveys in survlist
@@ -215,10 +210,7 @@ def surveydiff(freq, ch, survlist=[1,2,3,4,5], pol='I', root_folder="out/", smoo
 
     log.debug("All maps read")
 
-    if not read_masks is None:
-        ps_mask, gal_mask = read_masks(freq)
-    else:
-        ps_mask = None; gal_mask = None
+    ps_mask, gal_mask = mapreader.read_masks(freq)
 
     log.debug("Metadata")
 
@@ -250,7 +242,7 @@ def surveydiff(freq, ch, survlist=[1,2,3,4,5], pol='I', root_folder="out/", smoo
               spectra_mask=gal_mask,
                 **smooth_combine_config )
 
-def chdiff(freq, chlist, surv, pol='I', smooth_combine_config=None, root_folder="out/", read_masks=None, log_to_file=False, mapreader=None):
+def chdiff(freq, chlist, surv, pol='I', smooth_combine_config=None, root_folder="out/", log_to_file=False, mapreader=None):
     """Channel difference
 
     for a specific survey, produces all the possible combinations of the channels in chlist
@@ -274,10 +266,7 @@ def chdiff(freq, chlist, surv, pol='I', smooth_combine_config=None, root_folder=
     # read all maps
     maps = dict([(ch, mapreader(freq, surv, ch, halfring=0, pol=pol)) for ch in chlist])
 
-    if not read_masks is None:
-        ps_mask, gal_mask = read_masks(freq)
-    else:
-        ps_mask = None; gal_mask = None
+    ps_mask, gal_mask = mapreader.read_masks(freq)
 
     metadata = dict( 
         file_type="chdiff",

@@ -4,7 +4,11 @@ import healpy as hp
 from glob import glob
 import os
 from differences import halfrings, surveydiff, chdiff 
-from IPython.parallel import Client
+
+paral = False
+if paral:
+    from IPython.parallel import Client
+
 from reader import DPCDX9Reader
 
 NSIDE = 1024
@@ -37,7 +41,6 @@ def chlist(freq):
 log.root.level = log.DEBUG
 mapreader = DPCDX9Reader(os.environ["DX9_LFI"])
 
-paral = False
 if __name__ == '__main__':
 
     if paral:

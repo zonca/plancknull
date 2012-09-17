@@ -212,7 +212,8 @@ class DPCDX9Reader(BaseMapReader):
         format_dict = {'freq': '',
                        'nside': '',
                        'survey': '',
-                       'halfring': ''}
+                       'halfring': '',
+                       'map_type': ''}
 
         if freq in (30, 44, 70):
             format_dict['freq'] = freq
@@ -244,6 +245,7 @@ class DPCDX9Reader(BaseMapReader):
 
         filenames = []
         if chtag == "":
+            format_dict['map_type'] = 'frequency map'
             # We look for a frequency map
             if type(surv) is int:
                 base_path = os.path.join(base_path, "Surveys_DX9")
@@ -259,6 +261,7 @@ class DPCDX9Reader(BaseMapReader):
                 filenames = [filenames.sorted()[-1]]
 
         elif radiometer_match:
+            format_dict['map_type'] = 'single radiometer map'
             # We look for a radiometer map
             filenames = glob(os.path.join(base_path, "SINGLE_horn_Survey",
                                           "LFI_{freq}_{nside}_????????_{rad}_{halfring}{survey}.fits"
@@ -270,6 +273,7 @@ class DPCDX9Reader(BaseMapReader):
                 filenames = [filenames.sorted()[-1]]
 
         elif horn_match:
+            format_dict['map_type'] = 'single horn map'
             # We look for a horn map
             output_map = None
             for rad in [horn_match.group(1) + arm for arm in ('M', 'S')]:
@@ -279,6 +283,7 @@ class DPCDX9Reader(BaseMapReader):
                 filenames.append(sorted(match)[-1])
 
         elif quadruplet_match:
+            format_dict['map_type'] = 'horn pair map'
             # We look for a quadruplet map
             if surv in ("nominal", "full"):
                 base_path = os.path.join(base_path, "Couple_horn_DX9")
@@ -297,7 +302,8 @@ class DPCDX9Reader(BaseMapReader):
                 filenames = [filenames.sorted()[-1]]
 
         if not filenames:
-            raise RuntimeError(("Unable to find a match (freq: '{freq}', "
+            raise RuntimeError(("Unable to find a match for {map_type} "
+                                "(freq: '{freq}', "
                                 "nside: '{nside}', survey: '{survey}', "
                                 "halfring: '{halfring}')")
                                .format(**format_dict))

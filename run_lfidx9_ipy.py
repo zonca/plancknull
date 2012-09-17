@@ -46,10 +46,10 @@ if __name__ == '__main__':
         lview = tc.load_balanced_view() # default load-balanced view
 
     root_folder = "dx9"
-    run_halfrings = False
+    run_halfrings = True
     run_surveydiff = True
-    run_chdiff = False
-    bp_corr = True
+    run_chdiff = True
+    bp_corr = False
 
     if run_halfrings:
         print "HALFRINGS"

@@ -38,9 +38,9 @@ class SingleFolderDXReader(BaseMapReader):
         result = []
         file_names = [
             glob(os.path.join(self.folder, "MASKs",
-                              'mask_ps_{}GHz_*.fits'.format(freq))),
+                              'mask_ps_{}GHz_*.fits'.format(freq)))[-1],
             glob(os.path.join(self.folder, "MASKs",
-                              'destripingmask_{}.fits'.format(freq)))]
+                              'destripingmask_{}.fits'.format(freq)))[-1]]
 
         for file_name in file_names:
             result.append(np.logical_not(np.floor(hp.ud_grade(hp.read_map(file_name), 1024)).astype(np.bool)))
@@ -169,10 +169,11 @@ class DPCDX9Reader(BaseMapReader):
         result = []
         file_names = [
             glob(os.path.join(self.folder, "MASKs",
-                              'mask_ps_{}GHz_*.fits'.format(freq))),
+                              'mask_ps_{}GHz_*.fits'.format(freq)))[-1],
             '/planck/sci_ops1/null_test_area/destriping_mask_{}.fits'.format(freq)]
 
         for file_name in file_names:
+            log.info("Reading file '%s'", file_name)
             result.append(np.logical_not(np.floor(hp.ud_grade(hp.read_map(file_name), 1024)).astype(np.bool)))
 
         return tuple(result)
@@ -246,6 +247,8 @@ class DPCDX9Reader(BaseMapReader):
             # We look for a frequency map
             if type(surv) is int:
                 base_path = os.path.join(base_path, "Surveys_DX9")
+            elif halfring > 0:
+                base_path = os.path.join(base_path, "JackKnife_DX9")
 
             filenames = glob(os.path.join(base_path,
                                           "LFI_{freq}_{nside}_????????_{halfring}{survey}.fits"
@@ -279,8 +282,10 @@ class DPCDX9Reader(BaseMapReader):
             # We look for a quadruplet map
             if surv in ("nominal", "full"):
                 base_path = os.path.join(base_path, "Couple_horn_DX9")
-            else:
+            elif type(surv) is int:
                 base_path = os.path.join(base_path, "Couple_horn_Surveys_DX9")
+            elif halfring > 0:
+                base_path = os.path.join(base_path, "JackKnife_DX9")
 
             filenames = glob(os.path.join(base_path,
                                           "LFI_{freq}_{nside}_????????_{quadruplet}_{halfring}{survey}.fits"

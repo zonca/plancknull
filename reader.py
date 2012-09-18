@@ -326,11 +326,13 @@ class DPCDX9Reader(BaseMapReader):
                     for idx in range(len(cur_map)):
                         output_map[idx] = output_map[idx] + cur_map[idx]
 
-        if len(output_map) == 1:
-            output_map = output_map * (1.0 / len(filenames))
-        else:
-            assert(len(output_map) == 2)
+        if type(output_map) is tuple:
+            if len(output_map) != 2:
+                raise RuntimeError("Wrong number of components in output_map: {0}"
+                                   .format(len(output_map)))
             output_map = 0.5 * (output_map[0] + output_map[1])
+        else:
+            output_map = output_map * (1.0 / len(filenames))
 
         # Apply the bandpass correction
         if bp_corr:

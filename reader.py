@@ -329,8 +329,8 @@ class DPCDX9Reader(BaseMapReader):
         if len(output_map) == 1:
             output_map = output_map * (1.0 / len(filenames))
         else:
-            output_map = tuple([output_map[idx] * (1.0 / len(filenames))
-                                for idx in range(len(output_map))])
+            assert(len(output_map) == 2)
+            output_map = 0.5 * (output_map[0] + output_map[1])
 
         # Apply the bandpass correction
         if bp_corr:

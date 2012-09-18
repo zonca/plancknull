@@ -221,8 +221,9 @@ def surveydiff(freq, ch, survlist=[1,2,3,4,5], pol='I', root_folder="out/", smoo
 
     combs = list(itertools.combinations(survlist, 2))
     for comb in combs:
-        # in case of even-odd, swap to odd-even
-        if comb[1] % 2 != 0 and comb[0] % 2 == 0:
+        # in case of even-odd, swap to odd-even. Do the same for
+        # combinations like e.g. SS3-SS1 (-> SS1-SS3)
+        if (comb[1] % 2 != 0 and comb[0] % 2 == 0) or (comb[1] < comb[0]):
             comb = (comb[1], comb[0])
 
         metadata["title"]="Survey difference SS%s-SS%s ch %s" % (str(comb[0])[:4], str(comb[1])[:4], chtag)

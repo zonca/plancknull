@@ -4,7 +4,12 @@ import healpy as hp
 from glob import glob
 import os
 from differences import halfrings, surveydiff, chdiff 
-from IPython.parallel import Client
+
+paral = False
+if paral:
+    from IPython.parallel import Client
+
+from reader import DPCDX9Reader
 
 NSIDE = 1024
 
@@ -34,8 +39,8 @@ def chlist(freq):
     return chs
 
 log.root.level = log.DEBUG
+mapreader = DPCDX9Reader(os.environ["DX9_LFI"])
 
-paral = False
 if __name__ == '__main__':
 
     if paral:
@@ -44,10 +49,10 @@ if __name__ == '__main__':
         lview = tc.load_balanced_view() # default load-balanced view
 
     root_folder = "dx9"
-    run_halfrings = False
+    run_halfrings = True
     run_surveydiff = True
-    run_chdiff = False
-    bp_corr = True
+    run_chdiff = True
+    bp_corr = False
 
     if run_halfrings:
         print "HALFRINGS"
@@ -61,9 +66,16 @@ if __name__ == '__main__':
             for chtag in chtags:
                 for surv in survs:
                     if paral:
-                        tasks.append(lview.apply_async(halfrings,freq, chtag, surv, pol='IQU', smooth_combine_config=smooth_combine_config, root_folder=root_folder,read_masks=read_dpc_masks,log_to_file=True))
+                        tasks.append(lview.apply_async(halfrings,freq, chtag,
+                                                       surv, pol='IQU',
+                                                       smooth_combine_config=smooth_combine_config,
+                                                       root_folder=root_folder,log_to_file=True,
+                                                       mapreader=mapreader))
                     else:
-                        halfrings(freq, chtag, surv, pol='IQU', smooth_combine_config=smooth_combine_config, root_folder=root_folder,read_masks=read_dpc_masks,log_to_file=False)
+                        halfrings(freq, chtag, surv, pol='IQU',
+                                  smooth_combine_config=smooth_combine_config,
+                                  root_folder=root_folder,log_to_file=False,
+                                 mapreader=mapreader)
 
     if run_surveydiff:
         print "SURVDIFF"
@@ -83,9 +95,17 @@ if __name__ == '__main__':
                 else:
                     pol="IQU"
                 if paral:
-                    tasks.append(lview.apply_async(surveydiff,freq, chtag, survs, pol=pol, smooth_combine_config=smooth_combine_config, root_folder=root_folder,read_masks=read_dpc_masks,log_to_file=True, bp_corr=bp_corr))
+                    tasks.append(lview.apply_async(surveydiff,freq, chtag,
+                                                   survs, pol=pol,
+                                                   smooth_combine_config=smooth_combine_config,
+                                                   root_folder=root_folder,log_to_file=True,
+                                                   bp_corr=bp_corr,
+                                                   mapreader=mapreader))
                 else:
-                    surveydiff(freq, chtag, survs, pol=pol, smooth_combine_config=smooth_combine_config, root_folder=root_folder,read_masks=read_dpc_masks,log_to_file=False, bp_corr=bp_corr)
+                    surveydiff(freq, chtag, survs, pol=pol,
+                               smooth_combine_config=smooth_combine_config,
+                               root_folder=root_folder,log_to_file=False,
+                               bp_corr=bp_corr, mapreader=mapreader)
 
     if run_chdiff:
         print "CHDIFF"
@@ -96,9 +116,20 @@ if __name__ == '__main__':
             smooth_combine_config = dict(fwhm=np.radians(1.), degraded_nside=128)
             for surv in survs:
                 if paral:
-                   tasks.append(lview.apply_async(chdiff,freq, ["LFI%d" % h for h in HORNS[freq]], surv, pol='I', smooth_combine_config=smooth_combine_config, root_folder=root_folder, read_masks=read_dpc_masks,log_to_file=True))
+                   tasks.append(lview.apply_async(chdiff,freq, ["LFI%d" % h for
+                                                                h in
+                                                                HORNS[freq]],
+                                                  surv, pol='I',
+                                                  smooth_combine_config=smooth_combine_config,
+                                                  root_folder=root_folder,
+                                                  log_to_file=True,
+                                                  mapreader=mapreader))
                 else:
-                   chdiff(freq, ["LFI%d" % h for h in HORNS[freq]], surv, pol='I', smooth_combine_config=smooth_combine_config, root_folder=root_folder, read_masks=read_dpc_masks,log_to_file=True)
+                   chdiff(freq, ["LFI%d" % h for h in HORNS[freq]], surv,
+                          pol='I', smooth_combine_config=smooth_combine_config,
+                          root_folder=root_folder,
+                          log_to_file=True,
+                          mapreader=mapreader)
 
     if paral:
         print("Wait for %d tasks to complete" % len(tasks))

@@ -39,9 +39,9 @@ class SingleFolderDXReader(BaseMapReader):
     def read_masks(self, freq):
         result = []
         file_names = [
-            glob(os.path.join(self.folder, "MASKs",
+            glob(os.path.join(os.environ["DX9_LFI"], "MASKs",
                               'mask_ps_{0}GHz_*.fits'.format(freq)))[-1],
-            glob(os.path.join(self.folder, "MASKs",
+            glob(os.path.join(os.environ["DX9_LFI"], "MASKs",
                               'destripingmask_{0}.fits'.format(freq)))[-1]]
 
         for file_name in file_names:
@@ -49,7 +49,7 @@ class SingleFolderDXReader(BaseMapReader):
 
         return tuple(result)
 
-    def __call__(self, freq, surv, chtag='', halfring=0, pol="I", bp_corr=False, baseline_length=None):
+    def __call__(self, freq, surv, chtag='', halfring=0, pol="I", bp_corr=False, baseline_length="1s"):
         """Read a map and return the array of pixels.
         
         Parameters

@@ -47,7 +47,7 @@ class SingleFolderDXReader(BaseMapReader):
 
         return tuple(result)
 
-    def __call__(self, freq, surv, chtag='', halfring=0, pol="I", bp_corr=False):
+    def __call__(self, freq, surv, chtag='', halfring=0, pol="I", bp_corr=False, baseline_length=None):
         """Read a map and return the array of pixels.
         
         Parameters
@@ -64,6 +64,9 @@ class SingleFolderDXReader(BaseMapReader):
             0 for full, 1 and 2 for first and second halfrings
         pol : string
             required polarization components, e.g. 'I', 'Q', 'IQU'
+        baseline_length : string
+            baseline length string, typically "1m" or "1s"
+            if None, it is not used to match the filename 
 
         Returns
         -------
@@ -107,10 +110,15 @@ class SingleFolderDXReader(BaseMapReader):
             surv = "survey_%d" % surv
 
         # nside
-        if nside:
+        if self.nside:
             nside_tag = "%d" % nside
         else:
             nside_tag = "????"
+
+        # baseline length
+        baseline_length_tag = ''
+        if not baseline_length is None:
+            baseline_length_tag = '_' + baseline_length
 
         # read_map
         output_map = []
@@ -122,7 +130,7 @@ class SingleFolderDXReader(BaseMapReader):
         else:
             tags = [subset_halfring_tag]
         for tag in tags:
-            filename_pattern = os.path.join(folder, "???_%s_%s_????????%s_%s.fits*" % (str(freq), nside_tag, tag, surv))
+            filename_pattern = os.path.join(folder, "???_%s_%s_????????%s_%s%s.fits*" % (str(freq), nside_tag, tag, surv, baseline_length_tag))
             filename = glob(filename_pattern)
             if len(filename) == 1:
                 filename = filename[0]

@@ -4,14 +4,14 @@
 
 {% block content %}
 
-<p> All images smoothed to 1 degree and plotted with linear color scale, LFI = +- 30 microK, HFI +- 5 microK up to 217GHz then variable</p>
+<p> All images smoothed to 10 degree and plotted with linear color scale, LFI = +- 10 microK</p>
 
 <a name="summary"><h2>Summary table</h2></a>
 
 <p>Difference map (after smoothing) standard deviation (Chi-square planned for next version) in microK, click on the table cell to popup the map <br />
 Change colors threshold:
-  Orange: <input type="text" name="orange" id="orange" value="15" class="updatesummarycolor" />
-  Red: <input type="text" name="red" id="red"/ value="20" class="updatesummarycolor" >
+  Orange: <input type="text" name="orange" id="orange" value="9" class="updatesummarycolor" />
+  Red: <input type="text" name="red" id="red"/ value="11.5" class="updatesummarycolor" >
 </p>
 {% for summary_table in summary_tables %}
 <table class="table table-hover table-condensed summarytable">

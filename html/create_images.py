@@ -1,16 +1,14 @@
 import os
 import exceptions
-import gc
 import matplotlib.pyplot as plt
 import json
 from glob import glob
 import sys
 sys.path.append("..")
-from reader import type_of_channel_set
 
 import healpy as hp
 
-root_folder = "../dx9"
+root_folder = "../ddx9"
 out_folder = "../dx9null/images"
 
 try:
@@ -25,10 +23,12 @@ def plot_figure(metadata):
         allmap = [hp.ma(hp.read_map(os.path.join(root_folder, metadata["file_name"])))]
     for comp, m in zip("IQU", allmap):
         if comp in "QU":
-            plot_range = 30
+            plot_range = 10
         else:
-            plot_range = 30
+            plot_range = 10
         test_type = metadata["base_file_name"].split("/")[0]
+        if isinstance(metadata["channel"], list):
+            metadata["channel"] = "_".join(metadata["channel"])
         if metadata["channel"].find("_") < 0:
             try:
                 if int(metadata["channel"]) > 70:
@@ -65,6 +65,6 @@ for fold in ["halfrings", "surveydiff", "chdiff"]:
     except:
         pass
 
-for f in glob(os.path.join(root_folder, "*", "*bpcorr*map.json")):
+for f in glob(os.path.join(root_folder, "*", "*bpcorr_map.json")):
     print f
     plot_figure(json.load(open(f)))

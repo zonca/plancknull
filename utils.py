@@ -33,3 +33,12 @@ def smooth_variance_map(var_m, orig_fwhm, fwhm):
     smoothed_var_m *= A_vb
 
     return smoothed_var_m
+
+def read_mask(filename, nside):
+    return np.logical_not(
+               np.floor(
+                    hp.ud_grade(
+                        hp.read_map(filename), nside_out=nside
+                    )
+               ).astype(np.bool)
+           )

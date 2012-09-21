@@ -6,7 +6,9 @@ import numpy as np
 import healpy as hp
 import re
 
-stokes = "IQU"
+stokes = "IQUHABCDEF" # H for hits, 
+# ABCDEF 6 components of VARIANCE matrix
+# II, IQ, IU, QQ, QU, UU
 
 def type_of_channel_set(ch):
     """Returns a string that identifies the set of channels"""

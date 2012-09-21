@@ -1,7 +1,5 @@
 import numpy as np
 import logging as log
-import healpy as hp
-from glob import glob
 import os
 from differences import halfrings, surveydiff, chdiff 
 
@@ -12,22 +10,6 @@ if paral:
 from reader import DPCDX9Reader
 
 NSIDE = 1024
-
-def read_dpc_masks(freq):
-    import numpy as np
-    import os
-    import healpy as hp
-    from glob import glob
-    ps_mask = np.logical_not(np.floor(hp.ud_grade( 
-    hp.read_map(
-        glob(os.path.join(os.environ["DX9_LFI"], "MASKs",'mask_ps_%dGHz_*.fits' % freq))[0]), NSIDE))
-    ).astype(np.bool)
-    gal_filename = glob(os.path.join(
-        os.environ["DX9_LFI"], "MASKs",
-        'destripingmask_%d.fits' % freq))[0]
-    gal_mask = np.logical_not(np.floor(hp.ud_grade( 
-    hp.read_map(gal_filename), NSIDE)).astype(np.bool))
-    return ps_mask, gal_mask
 
 HORNS = {30:[27,28], 44:[24,25,26], 70:list(range(18,23+1))}
 

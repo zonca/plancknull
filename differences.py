@@ -7,6 +7,8 @@ import logging as log
 import healpy as hp
 import reader
 
+import utils
+
 def configure_file_logger(base_filename):
     rl = log.root
     handler = log.FileHandler(base_filename + ".log", mode='w')
@@ -19,7 +21,27 @@ def configure_file_logger(base_filename):
     rl.addHandler( handler )
     log.info("Start logging")
 
-def smooth_combine(maps_and_weights, fwhm=np.radians(2.0), degraded_nside=32, spectra=False, smooth_mask=False, spectra_mask=False, base_filename="out", root_folder=".", metadata={}):
+
+def combine_maps(maps_and_weights):
+    """Combine maps with given weights
+
+    """
+    is_IQU = len(maps_and_weights[0][0]) == 3
+    # combine
+    if is_IQU:
+        combined_map = [maps_and_weights[0][0][comp] * maps_and_weights[0][1] for comp in range(3)]  
+        for comp in range(3):
+            for m,w in maps_and_weights[1:]:
+                combined_map[comp] += m[comp] * w
+    else: # single component only
+        # combined_map is a list of 1 element
+        combined_map = [maps_and_weights[0][0] * maps_and_weights[0][1]]
+        for m,w in maps_and_weights[1:]:
+            combined_map[0] += m * w
+
+    return combined_map
+
+def smooth_combine(maps_and_weights, variance_maps_and_weights, fwhm=np.radians(2.0), degraded_nside=32, spectra=False, smooth_mask=False, spectra_mask=False, base_filename="out", root_folder=".", metadata={}, orig_fwhm=None):
     """Combine, smooth, take-spectra, write metadata
 
     The maps (I or IQU) are first combined with their own weights, then smoothed and degraded.
@@ -30,6 +52,8 @@ def smooth_combine(maps_and_weights, fwhm=np.radians(2.0), degraded_nside=32, sp
     maps_and_weights : list of tuples
         [(map1_array, map1_weight), (map2_array, map2_weight), ...]
         each tuple contains a I or IQU map to be combined with its own weight to give the final map
+    variance_maps_and_weights : list of tuples
+        same as maps_and_weights but containing variances
     fwhm : double
         smoothing gaussian beam width in radians
     degraded_nside : integer
@@ -44,6 +68,8 @@ def smooth_combine(maps_and_weights, fwhm=np.radians(2.0), degraded_nside=32, sp
         root path of the output files
     metadata : dict
         initial state of the metadata to be written to the json files
+    orig_fwhm : double
+        original fwhm of the map, needed for chi2
 
     Returns
     -------
@@ -56,44 +82,21 @@ def smooth_combine(maps_and_weights, fwhm=np.radians(2.0), degraded_nside=32, sp
     if not is_IQU:
         assert hp.isnpixok(len(maps_and_weights[0][0])), "Input maps must have either 1 or 3 components"
 
-    # combine
-    if is_IQU:
-        combined_map = [maps_and_weights[0][0][comp] * maps_and_weights[0][1] for comp in range(3)]  
-        for comp in range(3):
-            for m,w in maps_and_weights[1:]:
-                combined_map[comp] += m[comp] * w
-    else: # single component only
-        # combined_map is a list of 1 element
-        combined_map = [maps_and_weights[0][0] * maps_and_weights[0][1]]
-        for m,w in maps_and_weights[1:]:
-            combined_map[0] += m * w
+    combined_map = combine_maps(maps_and_weights)
+    combined_variance_map = combine_maps(variance_maps_and_weights)
 
     # apply mask
-    for m in combined_map:
+    for m in combined_map + combined_variance_map:
         m.mask |= smooth_mask
 
     monopole_I, dipole_I = hp.fit_dipole(combined_map[0], gal_cut=30)
     # remove monopole, only I
     combined_map[0] -= monopole_I
 
-    # smooth
-    log.debug("Smooth")
-
-    smoothed_map = hp.smoothing(combined_map, fwhm=fwhm)
-    smoothed_map = hp.ud_grade(smoothed_map, degraded_nside)
-
-    # fits
-    log.info("Write fits map: " + base_filename + "_map.fits")
-    hp.write_map(os.path.join(root_folder, base_filename + "_map.fits"), smoothed_map)
-
-    # metadata
-    metadata["base_file_name"] = base_filename
-    metadata["file_name"] = base_filename + "_cl.fits"
-    metadata["file_type"] += "_cl"
-    metadata["removed_monopole_I"] = monopole_I
-    metadata["dipole_I"] = tuple(dipole_I)
-
     if spectra:
+        # save original masks
+        orig_mask = [m.mask.copy() for m in combined_map] 
+
         # spectra
         log.debug("Anafast")
         for m in combined_map:
@@ -107,6 +110,32 @@ def smooth_combine(maps_and_weights, fwhm=np.radians(2.0), degraded_nside=32, sp
             log.error("Write IQU Cls to fits requires more recent version of healpy")
         del cl
 
+        # restore masks
+        for m, mask in zip(combined_map, orig_mask):
+            m.mask = mask
+
+    # smooth
+    log.debug("Smooth")
+
+    smoothed_map = hp.smoothing(combined_map, fwhm=fwhm)
+    smoothed_map = hp.ud_grade(smoothed_map, degraded_nside)
+
+    smoothed_variance_map = utils.smooth_variance_map(combined_variance_map, orig_fwhm=orig_fwhm, fwhm=fwhm)
+    # power=-2 makes ud_grade sum the pixels instead of taking the mean
+    smoothed_variance_map = hp.ud_grade(smoothed_variance_map, degraded_nside, power=-2)
+
+    # fits
+    log.info("Write fits map: " + base_filename + "_map.fits")
+    hp.write_map(os.path.join(root_folder, base_filename + "_map.fits"), smoothed_map)
+
+    # metadata
+    metadata["base_file_name"] = base_filename
+    metadata["file_name"] = base_filename + "_cl.fits"
+    metadata["file_type"] += "_cl"
+    metadata["removed_monopole_I"] = monopole_I
+    metadata["dipole_I"] = tuple(dipole_I)
+
+    if spectra:
         with open(os.path.join(root_folder, base_filename + "_cl.json"), 'w') as f:
             json.dump(metadata, f)
 
@@ -116,12 +145,14 @@ def smooth_combine(maps_and_weights, fwhm=np.radians(2.0), degraded_nside=32, sp
     metadata["smooth_fwhm_deg"] = "%.2f" % np.degrees(fwhm)
     metadata["out_nside"] = degraded_nside
     if is_IQU:
-        for comp,m in zip("IQU", smoothed_map):
-             metadata["map_p2p_%s" % comp] = "%.2e" % m.ptp()
-             metadata["map_std_%s" % comp] = "%.2e" % m.std()
+        for comp,m,var in zip("IQU", smoothed_map, smoothed_variance_map):
+             metadata["map_p2p_%s" % comp] = m.ptp()
+             metadata["map_std_%s" % comp] = m.std()
+             metadata["map_chi2_%s" % comp] = np.mean(m**2 / var) 
     else:
-        metadata["map_p2p"] = "%.2e" % smoothed_map.ptp()
-        metadata["map_std"] = "%.2e" % smoothed_map.std()
+        metadata["map_p2p"] = smoothed_map.ptp()
+        metadata["map_std"] = smoothed_map.std()
+        metadata["map_chi2"] = np.mean(smoothed_map**2 / smoothed_variance_map) 
 
     with open(os.path.join(root_folder, base_filename + "_map.json"), 'w') as f:
         json.dump(metadata, f)
@@ -208,6 +239,10 @@ def surveydiff(freq, ch, survlist=[1,2,3,4,5], pol='I', root_folder="out/", smoo
     # read all maps
     maps = dict([(surv, mapreader(freq, surv, ch, halfring=0, pol=pol, bp_corr=bp_corr)) for surv in survlist])
 
+    log.debug("Read variance")
+    var_pol = 'A' if len(pol) == 1 else 'ADF' # for I only read sigma_II, else read sigma_II, sigma_QQ, sigma_UU
+    variance_maps = dict([(surv, mapreader(freq, surv, ch, halfring=0, pol=var_pol, bp_corr=bp_corr)) for surv in survlist])
+
     log.debug("All maps read")
 
     ps_mask, gal_mask = mapreader.read_masks(freq)
@@ -236,6 +271,8 @@ def surveydiff(freq, ch, survlist=[1,2,3,4,5], pol='I', root_folder="out/", smoo
         smooth_combine(
                 [ (maps[comb[0]],  .5),
                   (maps[comb[1]], -.5) ],
+                [ (variance_maps[comb[0]], 1),
+                  (variance_maps[comb[1]], 1) ],
                 base_filename=base_filename,
                 root_folder=root_folder,
                 metadata=dict(metadata.items() + {"surveys": comb}.items()),

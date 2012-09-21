@@ -10,6 +10,8 @@ stokes = "IQUHABCDEF" # H for hits,
 # ABCDEF 6 components of VARIANCE matrix
 # II, IQ, IU, QQ, QU, UU
 
+FWHM = { 30:33.15873215, 44:28.08523439, 70:13.08124258 }
+
 def type_of_channel_set(ch):
     """Returns a string that identifies the set of channels"""
     if ch == "":
@@ -40,9 +42,9 @@ class SingleFolderDXReader(BaseMapReader):
         result = []
         file_names = [
             glob(os.path.join(self.folder, "MASKs",
-                              'mask_ps_{0}GHz_*.fits'.format(freq)))[-1],
+                              'mask_ps_%dGHz_*.fits' % freq))[-1],
             glob(os.path.join(self.folder, "MASKs",
-                              'destripingmask_{0}.fits'.format(freq)))[-1]]
+                              'union_mask_%d.fits' % freq))[-1]]
 
         for file_name in file_names:
             result.append(np.logical_not(np.floor(hp.ud_grade(hp.read_map(file_name), 1024)).astype(np.bool)))
@@ -113,7 +115,7 @@ class SingleFolderDXReader(BaseMapReader):
 
         # nside
         if self.nside:
-            nside_tag = "%d" % nside
+            nside_tag = "%d" % self.nside
         else:
             nside_tag = "????"
 

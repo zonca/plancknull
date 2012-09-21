@@ -51,7 +51,7 @@ class SingleFolderDXReader(BaseMapReader):
 
         return tuple(result)
 
-    def __call__(self, freq, surv, chtag='', halfring=0, pol="I", bp_corr=False, baseline_length=None):
+    def __call__(self, freq, surv, chtag='', halfring=0, pol="I", bp_corr=False, baseline_length="1s"):
         """Read a map and return the array of pixels.
         
         Parameters

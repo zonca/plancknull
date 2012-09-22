@@ -10,7 +10,10 @@ stokes = "IQUHABCDEF" # H for hits,
 # ABCDEF 6 components of VARIANCE matrix
 # II, IQ, IU, QQ, QU, UU
 
-FWHM = { 30:33.15873215, 44:28.08523439, 70:13.08124258 }
+def arcmin2rad(arcmin):
+    return np.radians(arcmin/60.)
+
+FWHM = { 30:arcmin2rad(33.15873215), 44:arcmin2rad(28.08523439), 70:arcmin2rad(13.08124258)}
 
 def type_of_channel_set(ch):
     """Returns a string that identifies the set of channels"""

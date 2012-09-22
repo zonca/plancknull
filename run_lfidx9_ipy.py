@@ -1,13 +1,18 @@
 import numpy as np
+import healpy as hp
+from glob import glob
 import logging as log
 import os
 from differences import halfrings, surveydiff, chdiff 
+
+import utils
 
 paral = True
 if paral:
     from IPython.parallel import Client
 
 from reader import SingleFolderDXReader
+import reader
 
 NSIDE = 1024
 
@@ -30,17 +35,18 @@ if __name__ == '__main__':
         tc = Client()
         lview = tc.load_balanced_view() # default load-balanced view
 
-    root_folder = "ddx9_1deg"
+    root_folder = "ddx9"
     run_halfrings = True
     run_surveydiff = True
     run_chdiff = False
+    compute_union_mask = False
 
     if run_halfrings:
         print "HALFRINGS"
         survs = ["nominal", "full"]
         freqs = [30,44,70]
         for freq in freqs:
-            smooth_combine_config = dict(fwhm=np.radians(1.), degraded_nside=128)
+            smooth_combine_config = dict(fwhm=np.radians(10.), degraded_nside=128, orig_fwhm=reader.FWHM[freq], spectra=True)
             chtags = [""]
             if freq == 70:
                 chtags += ["18_23", "19_22", "20_21"]
@@ -64,7 +70,7 @@ if __name__ == '__main__':
         freqs = [30, 44, 70]
         for bp_corr in [False, True]:
             for freq in freqs:
-                smooth_combine_config = dict(fwhm=np.radians(1.), degraded_nside=128)
+                smooth_combine_config = dict(fwhm=np.radians(10.), degraded_nside=128, orig_fwhm=reader.FWHM[freq], spectra=True)
                 chtags = [""]
                 if freq == 70:
                     chtags += ["18_23", "19_22", "20_21"]
@@ -95,7 +101,7 @@ if __name__ == '__main__':
         freqs = [30, 44, 70]
             
         for freq in freqs:
-            smooth_combine_config = dict(fwhm=np.radians(1.), degraded_nside=128)
+            smooth_combine_config = dict(fwhm=np.radians(10.), degraded_nside=128, orig_fwhm=reader.FWHM[freq], spectra=True)
             for surv in survs:
                 if paral:
                    tasks.append(lview.apply_async(chdiff,freq, ["LFI%d" % h for
@@ -112,6 +118,25 @@ if __name__ == '__main__':
                           root_folder=root_folder,
                           log_to_file=True,
                           mapreader=mapreader)
+
+    if compute_union_mask:
+        assert ~paral
+        print "UNIONMASK"
+        survs = [1,2,3,4,5]
+        freqs = [30, 44, 70]
+        for freq in freqs:
+            mask = utils.read_mask(
+                glob(os.path.join(os.environ["DDX9_LFI"], "MASKs",
+                              'destripingmask_%d.fits' % freq))[-1]
+                             , nside=NSIDE )
+            mask |= utils.read_mask("/global/project/projectdirs/planck/user/zonca/masks/wmap_polarization_analysis_mask_r9_7yr_v4.fits", nside=NSIDE)
+            chtags = [""]
+            if freq == 70:
+                chtags += ["18_23", "19_22", "20_21"]
+            for chtag in chtags:
+                for surv in survs:
+                    mask |= mapreader(freq, surv, chtag, halfring=0, pol='Q').mask
+            hp.write_map("union_mask_%d.fits" % freq, mask)
 
     if paral:
         print("Wait for %d tasks to complete" % len(tasks))

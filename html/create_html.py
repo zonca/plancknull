@@ -1,10 +1,18 @@
 import os
+
+import numpy as np
+import healpy as hp
 import json
 from django.template import loader, Context
 from django.conf import settings
+import matplotlib.pyplot as plt
 import exceptions
 
-root_folder = "../ddx9"
+cm = plt.get_cmap('jet')
+num_colors = 11
+colors = [cm(float(i)/num_colors) for i in range(num_colors) ]
+
+root_folder = "../ddx9/"
 out_folder = "../dx9null/"
 
 def write_html(filename, t, c):
@@ -12,6 +20,11 @@ def write_html(filename, t, c):
         f.write(t.render(c))
 
 HORNS = {30:[27,28], 44:[24,25,26], 70:list(range(18,23+1))}
+
+def bin(y, samples):
+    y_split = np.array_split(y, len(y)/samples)
+    return map(np.mean, y_split), np.array(map(np.std, y_split))/np.sqrt(samples)
+
 
 def chlist(freq):
     horns = HORNS[freq]
@@ -31,6 +44,10 @@ for comp in "IQU":
     menu_item = {"title":"Surv Diff %s" % comp, "file":"surveydiff_%s.html" % comp}
     menu_item["links"] = [("%d_%s" % (freq, comp), "%dGHz %s" % (freq, comp))  for freq in freqs]
     menu.append(menu_item)
+
+menu_item = {"title":"Spectra", "file":"spectra.html"}
+menu_item["links"] = [("%d_%s" % (freq, comp), "%dGHz %s" % (freq, comp)) for comp in "TE" for freq in freqs]
+menu.append(menu_item)
 
 #menu_item = {"title":"Horn Diff", "file":"horndiff.html"}
 #menu_item["links"] = [("%d_SS1" % freq, "%dGHz" % freq) for freq in [30, 44, 70]]
@@ -160,6 +177,88 @@ for comp in "IQU":
                 })
 
     write_html("surveydiff_%s.html" % comp, t, c)
+
+bp_tag = {True:"_bpcorr", False:''}
+survs = [1,2,3,4,5]
+
+cl_comp = {"T":0, "E":2}
+table_list = []
+for comp in "TE":
+    summary_table = {"labels":[], "rows":[], "labels_done":False}
+    for freq in freqs:
+        chtags = [""]
+        if freq == 70:
+            chtags += ["18_23", "19_22", "20_21"]
+        #if freq < 100:
+        #    chtags += chlist(freq)
+        for ch in chtags:
+            if ch or freq>70:
+                bp_corrs = [False]
+            else:
+                bp_corrs = [False, True]
+            for bp_corr in bp_corrs:
+                if ch and ch.find("_") < 0 and comp in "QU":
+                    pass
+                else:
+                    if ch:
+                        chtag = ch
+                    else:
+                        chtag = str(freq)
+
+                    plt.figure()
+                    i=0
+
+                    table = {"title":chtag + " %s" % comp, "tag":chtag  + "_%s" % comp, "labels":["Spectra"]}
+                    if bp_corr:
+                        table["title"] += " BPCORR"
+                    table["rows"] = []
+                    summary_row = dict(tag=table["title"], numslinks=[])
+                    for surv in survs[:-1]:
+                        for surv2 in survs[1:]:
+                            if surv2 <= surv:
+                                pass
+                            else:
+                                comb = swap_surv((surv, surv2))
+                                metadata_filename = os.path.join(root_folder, "surveydiff", "%s_SS%d-SS%d%s_cl.json" % (chtag, comb[0], comb[1], bp_tag[bp_corr]))
+                                metadata=json.load(open(metadata_filename))
+                                spec = hp.read_cl(root_folder + metadata["file_name"])[cl_comp[comp]]*1e12
+                                binspec, binspecerr = bin(spec, 5)
+                                ell, eller = bin(np.arange(len(spec)), 5)
+                                plt.loglog(ell, binspec, label="SS%d-SS%d" % comb, color=colors[i])
+                                i += 1
+
+                    f=os.path.join(root_folder, "halfrings", "%s_SS%s_cl.json" % (chtag, "nominal"))
+                    metadata=json.load(open(f))
+                    spec = hp.read_cl(root_folder + metadata["file_name"])[cl_comp[comp]]*1e12
+                    binspec, binspecerr = bin(spec, 5)
+                    ell, eller = bin(np.arange(len(spec)), 5)
+                    plt.loglog(ell, binspec, label="nom half", color=colors[i])
+                    leg = plt.legend(loc=0, prop={"size":9})
+                    leg.legendPatch.set_alpha(0.5)
+                    plt.grid()
+                    plt.title(table["title"])
+                    plt.xlim([0, 2048])
+                    plt.xlabel("ell"); plt.ylabel("C_ell [microK^2]")
+                    out_filename = "spectra/cl_%s_%s" % (chtag, comp)
+                    if bp_corr:
+                        out_filename += "_bpcorr"
+                    plt.savefig(out_folder + "/images/" + out_filename + "_thumb.jpg")
+                    print out_filename
+                    row = {"tag":"", "images":[]}
+                    row["images"].append({"file_name":out_filename,
+                        "tag" : metadata["base_file_name"].replace("/","_")+ "_%s" % comp,
+                                    })
+                    table["rows"] = [row]
+                    table_list.append(table)
+
+t = loader.get_template(template_name="page.html")
+c = Context({
+            'page_title': 'Spectra',
+            'table_list': table_list,
+            'menu':menu
+            })
+
+write_html("spectra.html", t, c)
 
 #print "CHDIFF"
 #survs = [1,2,3,4,5]

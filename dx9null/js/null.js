@@ -68,7 +68,7 @@ $(document).ready(function(){
         // color summary table
         $('.summarytable td').each(function() {
             $(this).css('background-color', 'white');
-            var fValue = parseFloat($(this).text());
+            var fValue = Math.abs(parseFloat($(this).text()));
             var orangeValue = parseFloat($('#orange').val());
             if (fValue > orangeValue) {
                 $(this).css('background-color', 'orange');

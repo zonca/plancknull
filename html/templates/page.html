@@ -8,10 +8,10 @@
 
 <a name="summary"><h2>Summary table</h2></a>
 
-<p>Difference map (after smoothing) standard deviation (Chi-square planned for next version) in microK, click on the table cell to popup the map <br />
+<p>Difference map (after smoothing) chi-square, click on the table cell to popup the map <br />
 Change colors threshold:
-  Orange: <input type="text" name="orange" id="orange" value="9" class="updatesummarycolor" />
-  Red: <input type="text" name="red" id="red"/ value="11.5" class="updatesummarycolor" >
+  Orange: <input type="text" name="orange" id="orange" value="1e-4" class="updatesummarycolor" />
+  Red: <input type="text" name="red" id="red"/ value="1e-3" class="updatesummarycolor" >
 </p>
 {% for summary_table in summary_tables %}
 <table class="table table-hover table-condensed summarytable">
@@ -31,7 +31,7 @@ Change colors threshold:
         {% for numlink in row.numslinks %}
             <td>
             <a href="images/{{numlink.1}}.jpg" class="thumbnail"  rel="prettyPhoto">
-                {{numlink.0|floatformat:2}}
+                {{numlink.0}}
             </a>
             </td>
         {% endfor %}

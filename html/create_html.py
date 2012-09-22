@@ -4,7 +4,7 @@ from django.template import loader, Context
 from django.conf import settings
 import exceptions
 
-root_folder = "../dx9"
+root_folder = "../ddx9"
 out_folder = "../dx9null/"
 
 def write_html(filename, t, c):
@@ -61,6 +61,7 @@ for freq in freqs:
             summary_row = dict(tag=table["title"], numslinks=[])
             row = {"images":[]}
             f=os.path.join(root_folder, "halfrings", "%s_SS%s_map.json" % (chtag, str(surv)))
+            print(f)
             metadata = json.load(open(f))
             for comp in "IQU":
                 row["images"].append({ "title":metadata["title"] + " %s" % comp, 
@@ -70,9 +71,9 @@ for freq in freqs:
                 if not summary_table["labels_done"]:
                     summary_table["labels"].append(comp)
                 try:
-                    summary_row["numslinks"].append((float(metadata["map_std_%s" % comp])*1.e6, row["images"][-1]["file_name"]))
+                    summary_row["numslinks"].append(("%.2e" % (metadata["map_chi2_%s" % comp]), row["images"][-1]["file_name"]))
                 except exceptions.KeyError:
-                    summary_row["numslinks"].append((float(metadata["map_std"])*1.e6,row["images"][-1]["file_name"] ))
+                    summary_row["numslinks"].append(("%.2e" % (metadata["map_chi2"]),row["images"][-1]["file_name"] ))
             table["rows"].append(row)
             table_list.append(table)
             summary_table["labels_done"] = True
@@ -141,9 +142,9 @@ for comp in "IQU":
                         "tag" : metadata["base_file_name"].replace("/","_")+ "_%s" % comp,
                                     })
                                 try:
-                                    summary_row["numslinks"].append((float(metadata["map_std_%s" % comp])*1.e6, row["images"][-1]["file_name"]))
+                                    summary_row["numslinks"].append(("%.2e" % (metadata["map_chi2_%s" % comp]), row["images"][-1]["file_name"]))
                                 except exceptions.KeyError:
-                                    summary_row["numslinks"].append((float(metadata["map_std"])*1.e6,row["images"][-1]["file_name"] ))
+                                    summary_row["numslinks"].append(("%.2e" % (metadata["map_chi2"]),row["images"][-1]["file_name"] ))
 
                         table["rows"].append(row)
                     table_list.append(table)
@@ -188,9 +189,9 @@ for comp in "IQU":
 #                    "tag" : metadata["base_file_name"].replace("/","_"),
 #                        })
 #                    try:
-#                        summary_row["numslinks"].append((float(metadata["map_std_%s" % comp])*1.e6, row["images"][-1]["file_name"]))
+#                        summary_row["numslinks"].append(("%.2e" % (metadata["map_chi2_%s" % comp]), row["images"][-1]["file_name"]))
 #                    except exceptions.KeyError:
-#                        summary_row["numslinks"].append((float(metadata["map_std"])*1.e6,row["images"][-1]["file_name"] ))
+#                        summary_row["numslinks"].append(("%.2e" % (metadata["map_chi2"]),row["images"][-1]["file_name"] ))
 #            table["rows"].append(row)
 #        table_list.append(table)
 #        summary_table["labels_done"] = True

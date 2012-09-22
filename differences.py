@@ -205,9 +205,12 @@ def halfrings(freq, ch, surv, pol='I', smooth_combine_config=None, root_folder="
         title="Halfring difference survey %s ch %s" % (str(surv), chtag),
         )
     log.info("Call smooth_combine")
+    var_pol = 'A' if len(pol) == 1 else 'ADF' # for I only read sigma_II, else read sigma_II, sigma_QQ, sigma_UU
     smooth_combine(
             [(mapreader(freq, surv, ch, halfring=1, pol=pol), .5), 
              (mapreader(freq, surv, ch, halfring=2, pol=pol), -.5)],
+            [(mapreader(freq, surv, ch, halfring=1, pol=var_pol), 1.), 
+             (mapreader(freq, surv, ch, halfring=2, pol=var_pol), 1.)],
               base_filename=base_filename,
               metadata=metadata,
               root_folder=root_folder,
@@ -237,7 +240,10 @@ def surveydiff(freq, ch, survlist=[1,2,3,4,5], pol='I', root_folder="out/", smoo
         chtag = str(freq)
 
     if log_to_file:
-        configure_file_logger(os.path.join(root_folder, "surveydiff", "%s_SSdiff" % chtag))
+        logfilename = "%s_SSdiff" % chtag
+        if bp_corr:
+            logfilename += "_bpcorr"
+        configure_file_logger(os.path.join(root_folder, "surveydiff", logfilename))
 
     # read all maps
     maps = dict([(surv, mapreader(freq, surv, ch, halfring=0, pol=pol, bp_corr=bp_corr)) for surv in survlist])

@@ -148,6 +148,7 @@ def smooth_combine(maps_and_weights, variance_maps_and_weights, fwhm=np.radians(
     metadata["dipole_I"] = tuple(dipole_I)
 
     if spectra:
+        metadata["sky_fraction"] = sky_frac
         with open(os.path.join(root_folder, base_filename + "_cl.json"), 'w') as f:
             json.dump(metadata, f)
 

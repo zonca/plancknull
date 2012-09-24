@@ -101,8 +101,17 @@ def smooth_combine(maps_and_weights, variance_maps_and_weights, fwhm=np.radians(
         log.debug("Anafast")
         for m in combined_map:
             m.mask |= spectra_mask
-        # dividing by two in order to recover the same noise as the average map (M1 + M2)/2
-        cl = hp.anafast(combined_map / 2.)
+        # dividing by two in order to recover the same noise as the average map (M1 - M2)/2
+        cl = hp.anafast([m/2. for m in combined_map])
+        # sky fraction
+        sky_frac = (~combined_map[0].mask).sum()/float(len(combined_map[0]))
+
+        if is_IQU:
+            for cl_comp in cl:
+                cl_comp /= sky_frac
+        else:
+            cl /= sky_frac
+
         # write spectra
         log.debug("Write cl: " + base_filename + "_cl.fits")
         try:

@@ -101,7 +101,8 @@ def smooth_combine(maps_and_weights, variance_maps_and_weights, fwhm=np.radians(
         log.debug("Anafast")
         for m in combined_map:
             m.mask |= spectra_mask
-        cl = hp.anafast(combined_map)
+        # dividing by two in order to recover the same noise as the average map (M1 + M2)/2
+        cl = hp.anafast(combined_map / 2.)
         # write spectra
         log.debug("Write cl: " + base_filename + "_cl.fits")
         try:
@@ -206,8 +207,8 @@ def halfrings(freq, ch, surv, pol='I', smooth_combine_config=None, root_folder="
     log.info("Call smooth_combine")
     var_pol = 'A' if len(pol) == 1 else 'ADF' # for I only read sigma_II, else read sigma_II, sigma_QQ, sigma_UU
     smooth_combine(
-            [(mapreader(freq, surv, ch, halfring=1, pol=pol), .5), 
-             (mapreader(freq, surv, ch, halfring=2, pol=pol), -.5)],
+            [(mapreader(freq, surv, ch, halfring=1, pol=pol), 1), 
+             (mapreader(freq, surv, ch, halfring=2, pol=pol), -1)],
             [(mapreader(freq, surv, ch, halfring=1, pol=var_pol), 1.), 
              (mapreader(freq, surv, ch, halfring=2, pol=var_pol), 1.)],
               base_filename=base_filename,
@@ -277,8 +278,8 @@ def surveydiff(freq, ch, survlist=[1,2,3,4,5], pol='I', root_folder="out/", smoo
 
         log.debug("Launching smooth_combine")
         smooth_combine(
-                [ (maps[comb[0]],  .5),
-                  (maps[comb[1]], -.5) ],
+                [ (maps[comb[0]],  1),
+                  (maps[comb[1]], -1) ],
                 [ (variance_maps[comb[0]], 1),
                   (variance_maps[comb[1]], 1) ],
                 base_filename=base_filename,
@@ -324,8 +325,8 @@ def chdiff(freq, chlist, surv, pol='I', smooth_combine_config=None, root_folder=
         metadata["title"]="Channel difference %s-%s SS%s" % (comb[0], comb[1], surv)
         metadata["channel"] = comb
         smooth_combine(
-                [ (maps[comb[0]],  .5),
-                  (maps[comb[1]], -.5) ],
+                [ (maps[comb[0]],  1),
+                  (maps[comb[1]], -1) ],
                 base_filename=os.path.join("chdiff", "%s-%s_SS%s" % (comb[0],   comb[1], surv)),
                 root_folder=root_folder,
                 metadata=metadata,

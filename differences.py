@@ -124,8 +124,7 @@ def smooth_combine(maps_and_weights, variance_maps_and_weights, fwhm=np.radians(
         smoothed_variance_map = [utils.smooth_variance_map(var, orig_fwhm=orig_fwhm, fwhm=fwhm) for var in combined_variance_map]
     else:
         smoothed_variance_map = utils.smooth_variance_map(combined_variance_map, orig_fwhm=orig_fwhm, fwhm=fwhm)
-    # power=-2 makes ud_grade sum the pixels instead of taking the mean
-    smoothed_variance_map = hp.ud_grade(smoothed_variance_map, degraded_nside, power=-2)
+    smoothed_variance_map = hp.ud_grade(smoothed_variance_map, degraded_nside)
 
     # fits
     log.info("Write fits map: " + base_filename + "_map.fits")

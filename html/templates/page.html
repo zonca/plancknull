@@ -4,9 +4,10 @@
 
 {% block content %}
 
-<p> All images smoothed to 10 degree and plotted with linear color scale, LFI = +- 10 microK</p>
+<p> All images smoothed to 10 degree and plotted with linear color scale, LFI = +- 10 microK,
+all maps are straight differences (M1 - M2)</p>
 <p> Spectra done with union mask of all surveys, all survey differences and nominal halfrings(red)
-in every plot, spectra binned on 10 ell's</p>
+in every plot, spectra binned on 10 ell's, spectra are computed on half-differences (M1-M2)/2 in order to normalize the noise correctly, and divided by the sky fraction</p>
 
 {% if summary_tables %}
 

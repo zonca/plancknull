@@ -4,12 +4,11 @@
 
 {% block content %}
 
-<p> All images smoothed to 10 degree and plotted with linear color scale, LFI = +- 10 microK,
-all maps are straight differences (M1 - M2)</p>
-<p> Spectra done with union mask of all surveys, all survey differences and nominal halfrings(red)
-in every plot, spectra binned on 10 ell's, spectra are computed on half-differences (M1-M2)/2 in order to normalize the noise correctly, and divided by the sky fraction</p>
 
 {% if summary_tables %}
+
+<p> All images smoothed to 10 degree and plotted with linear color scale, LFI = +- 10 microK,
+all maps are straight differences (M1 - M2)</p>
 
 <a name="summary"><h2>Summary table</h2></a>
 
@@ -45,7 +44,19 @@ Change colors threshold:
 </table>
 {% endfor %}
 
+{% else %}
+
+<h3>Angular Power Spectra:</h3>
+<ul>
+    <li>computed on half-differences (M1-M2)/2 in order to normalize the noise correctly</li>
+    <li>divided by the sky fraction</li>
+    <li>Mask: union mask of all surveys, DPC point source mask, DPC galaxy mask (used for destriping), WMAP polarization mask</li>
+    <li>spectra binned (using the mean) on 5 ell's</li>
+    <li>neither smoothing nor degrading applied</li>
+</ul>
+
 {% endif %}
+
 
 {% for table in table_list %}
     <a name="{{ table.tag }}"><h2>{{ table.title }}</h2></a>

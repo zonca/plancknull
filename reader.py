@@ -124,7 +124,7 @@ class SingleFolderDXReader(BaseMapReader):
 
         # baseline length
         baseline_length_tag = ''
-        if not baseline_length is None:
+        if baseline_length:
             baseline_length_tag = '_' + baseline_length
 
         # read_map

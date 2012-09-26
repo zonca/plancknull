@@ -4,14 +4,13 @@ from glob import glob
 import logging as log
 import os
 from differences import halfrings, surveydiff, chdiff 
+import reader
 
 import utils
 
 paral = True
 if paral:
     from IPython.parallel import Client
-
-from reader import SingleFolderDXReader
 
 NSIDE = 1024
 
@@ -25,7 +24,10 @@ def chlist(freq):
     return chs
 
 log.root.level = log.DEBUG
-mapreader = SingleFolderDXReader(os.environ["DDX9_LFI"])
+
+Reader = reader.Readers[os.environ["NULLTESTS_ENV"]]
+
+mapreader = Reader(os.environ["DDX9_LFI"], nside=NSIDE)
 
 if __name__ == '__main__':
 
@@ -45,7 +47,7 @@ if __name__ == '__main__':
         survs = ["nominal", "full"]
         freqs = [30,44,70]
         for freq in freqs:
-            smooth_combine_config = dict(fwhm=np.radians(10.), degraded_nside=128, spectra=True)
+            smooth_combine_config = dict(fwhm=np.radians(1.), degraded_nside=128, spectra=True)
             chtags = [""]
             if freq == 70:
                 chtags += ["18_23", "19_22", "20_21"]
@@ -69,7 +71,7 @@ if __name__ == '__main__':
         freqs = [30, 44, 70]
         for bp_corr in [False, True]:
             for freq in freqs:
-                smooth_combine_config = dict(fwhm=np.radians(10.), degraded_nside=128, spectra=True)
+                smooth_combine_config = dict(fwhm=np.radians(1.), degraded_nside=128, spectra=True)
                 chtags = [""]
                 if freq == 70:
                     chtags += ["18_23", "19_22", "20_21"]

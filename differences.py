@@ -41,7 +41,7 @@ def combine_maps(maps_and_weights):
 
     return combined_map
 
-def smooth_combine(maps_and_weights, variance_maps_and_weights, fwhm=np.radians(2.0), degraded_nside=32, spectra=False, smooth_mask=False, spectra_mask=False, base_filename="out", root_folder=".", metadata={}, orig_fwhm=None):
+def smooth_combine(maps_and_weights, variance_maps_and_weights, fwhm=np.radians(2.0), degraded_nside=32, spectra=False, smooth_mask=False, spectra_mask=False, base_filename="out", root_folder=".", metadata={}):
     """Combine, smooth, take-spectra, write metadata
 
     The maps (I or IQU) are first combined with their own weights, then smoothed and degraded.
@@ -68,8 +68,6 @@ def smooth_combine(maps_and_weights, variance_maps_and_weights, fwhm=np.radians(
         root path of the output files
     metadata : dict
         initial state of the metadata to be written to the json files
-    orig_fwhm : double
-        original fwhm of the map, needed for chi2
 
     Returns
     -------
@@ -131,9 +129,9 @@ def smooth_combine(maps_and_weights, variance_maps_and_weights, fwhm=np.radians(
     smoothed_map = hp.ud_grade(smoothed_map, degraded_nside)
 
     if is_IQU:
-        smoothed_variance_map = [utils.smooth_variance_map(var, orig_fwhm=orig_fwhm, fwhm=fwhm) for var in combined_variance_map]
+        smoothed_variance_map = [utils.smooth_variance_map(var, fwhm=fwhm) for var in combined_variance_map]
     else:
-        smoothed_variance_map = utils.smooth_variance_map(combined_variance_map, orig_fwhm=orig_fwhm, fwhm=fwhm)
+        smoothed_variance_map = utils.smooth_variance_map(combined_variance_map, fwhm=fwhm)
     smoothed_variance_map = hp.ud_grade(smoothed_variance_map, degraded_nside)
 
     # fits

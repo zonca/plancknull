@@ -12,7 +12,6 @@ if paral:
     from IPython.parallel import Client
 
 from reader import SingleFolderDXReader
-import reader
 
 NSIDE = 1024
 
@@ -46,7 +45,7 @@ if __name__ == '__main__':
         survs = ["nominal", "full"]
         freqs = [30,44,70]
         for freq in freqs:
-            smooth_combine_config = dict(fwhm=np.radians(10.), degraded_nside=128, orig_fwhm=reader.FWHM[freq], spectra=True)
+            smooth_combine_config = dict(fwhm=np.radians(10.), degraded_nside=128, spectra=True)
             chtags = [""]
             if freq == 70:
                 chtags += ["18_23", "19_22", "20_21"]
@@ -70,7 +69,7 @@ if __name__ == '__main__':
         freqs = [30, 44, 70]
         for bp_corr in [False, True]:
             for freq in freqs:
-                smooth_combine_config = dict(fwhm=np.radians(10.), degraded_nside=128, orig_fwhm=reader.FWHM[freq], spectra=True)
+                smooth_combine_config = dict(fwhm=np.radians(10.), degraded_nside=128, spectra=True)
                 chtags = [""]
                 if freq == 70:
                     chtags += ["18_23", "19_22", "20_21"]
@@ -101,7 +100,7 @@ if __name__ == '__main__':
         freqs = [30, 44, 70]
             
         for freq in freqs:
-            smooth_combine_config = dict(fwhm=np.radians(10.), degraded_nside=128, orig_fwhm=reader.FWHM[freq], spectra=True)
+            smooth_combine_config = dict(fwhm=np.radians(10.), degraded_nside=128, spectra=True)
             for surv in survs:
                 if paral:
                    tasks.append(lview.apply_async(chdiff,freq, ["LFI%d" % h for

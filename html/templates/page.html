@@ -7,8 +7,13 @@
 
 {% if summary_tables %}
 
-<p> All images smoothed to 10 degree and plotted with linear color scale, LFI = +- 10 microK,
-all maps are straight differences (M1 - M2)</p>
+<p>How difference maps are produced:</p>
+
+<ul>
+    <li> simple difference (M1 - M2)</li>
+    <li> smoothing by 10 degrees gaussian beam</li>
+    <li> ploted on linear scale on +- 10 microK</li>
+</ul>
 
 <a name="summary"><h2>Summary table</h2></a>
 
@@ -17,6 +22,16 @@ Change colors threshold:
   Orange: <input type="text" name="orange" id="orange" value="1e-4" class="updatesummarycolor" />
   Red: <input type="text" name="red" id="red"/ value="1e-3" class="updatesummarycolor" >
 </p>
+
+<p>Chi square is estimated as:</p>
+
+<ul>
+    <li> (M1 - M2)**2/(variance_M1 + variance_M2), variance from DPC maps</li>
+    <li> same masking as maps </li>
+    <li> smoothing by 10 degrees both map and variance after combining them </li>
+    <li> variance smoothed according to J.P. Leahy algorithm, implementation <a href="https://github.com/zonca/plancknull/blob/master/utils.py">on Github</a></li>
+    <li> taking the average of all the unmasked pixels </li>
+</ul>
 {% for summary_table in summary_tables %}
 <table class="table table-hover table-condensed summarytable">
     <tr>

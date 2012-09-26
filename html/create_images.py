@@ -65,6 +65,6 @@ for fold in ["halfrings", "surveydiff", "chdiff"]:
     except:
         pass
 
-for f in glob(os.path.join(root_folder, "*", "*bpcorr_map.json")):
+for f in glob(os.path.join(root_folder, "*", "*map.json")):
     print f
     plot_figure(json.load(open(f)))

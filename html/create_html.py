@@ -60,7 +60,7 @@ except exceptions.RuntimeError:
 
 print "HALFRINGS"
 
-survs = ["nominal"]#, "full"]
+survs = ["nominal", "full"]
 table_list = []
 summary_table = {"labels":[], "rows":[], "labels_done":False}
 for freq in freqs:
@@ -88,9 +88,9 @@ for freq in freqs:
                 if not summary_table["labels_done"]:
                     summary_table["labels"].append(comp)
                 try:
-                    summary_row["numslinks"].append(("%.2e" % (metadata["map_chi2_%s" % comp]), row["images"][-1]["file_name"]))
+                    summary_row["numslinks"].append(("%.2f" % (metadata["map_chi2_%s" % comp]), row["images"][-1]["file_name"]))
                 except exceptions.KeyError:
-                    summary_row["numslinks"].append(("%.2e" % (metadata["map_chi2"]),row["images"][-1]["file_name"] ))
+                    summary_row["numslinks"].append(("%.2f" % (metadata["map_chi2"]),row["images"][-1]["file_name"] ))
             table["rows"].append(row)
             table_list.append(table)
             summary_table["labels_done"] = True
@@ -159,9 +159,9 @@ for comp in "IQU":
                         "tag" : metadata["base_file_name"].replace("/","_")+ "_%s" % comp,
                                     })
                                 try:
-                                    summary_row["numslinks"].append(("%.2e" % (metadata["map_chi2_%s" % comp]), row["images"][-1]["file_name"]))
+                                    summary_row["numslinks"].append(("%.2f" % (metadata["map_chi2_%s" % comp]), row["images"][-1]["file_name"]))
                                 except exceptions.KeyError:
-                                    summary_row["numslinks"].append(("%.2e" % (metadata["map_chi2"]),row["images"][-1]["file_name"] ))
+                                    summary_row["numslinks"].append(("%.2f" % (metadata["map_chi2"]),row["images"][-1]["file_name"] ))
 
                         table["rows"].append(row)
                     table_list.append(table)

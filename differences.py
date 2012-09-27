@@ -325,7 +325,7 @@ def chdiff(freq, chlist, surv, pol='I', smooth_combine_config=None, root_folder=
 
     log.debug("Read variance")
     var_pol = 'A' if len(pol) == 1 else 'ADF' # for I only read sigma_II, else read sigma_II, sigma_QQ, sigma_UU
-    variance_maps = dict([(ch, mapreader(freq, surv, ch, halfring=0, pol=("II_cov",), bp_corr=False)) for ch in chlist])
+    variance_maps = dict([(ch, mapreader(freq, surv, ch, halfring=0, pol=("II_cov",), bp_corr=False)[0]) for ch in chlist])
     for var_m in variance_maps.values():
         assert np.all(var_m >= 0)
 

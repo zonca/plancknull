@@ -37,9 +37,9 @@ if __name__ == '__main__':
         lview = tc.load_balanced_view() # default load-balanced view
 
     root_folder = "ddx9"
-    run_halfrings = True
-    run_surveydiff = True
-    run_chdiff = False
+    run_halfrings = False
+    run_surveydiff = False
+    run_chdiff = True
     compute_union_mask = False
 
     if run_halfrings:
@@ -69,7 +69,7 @@ if __name__ == '__main__':
         print "SURVDIFF"
         survs = [1,2,3,4,5]
         freqs = [30, 44, 70]
-        for bp_corr in [False, True]:
+        for bp_corr in [True]:
             for freq in freqs:
                 smooth_combine_config = dict(fwhm=np.radians(1.), degraded_nside=128, spectra=True)
                 chtags = [""]
@@ -117,7 +117,7 @@ if __name__ == '__main__':
                    chdiff(freq, ["LFI%d" % h for h in HORNS[freq]], surv,
                           pol='I', smooth_combine_config=smooth_combine_config,
                           root_folder=root_folder,
-                          log_to_file=True,
+                          log_to_file=False,
                           mapreader=mapreader)
 
     if compute_union_mask:

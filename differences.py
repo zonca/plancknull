@@ -323,6 +323,12 @@ def chdiff(freq, chlist, surv, pol='I', smooth_combine_config=None, root_folder=
     # read all maps
     maps = dict([(ch, mapreader(freq, surv, ch, halfring=0, pol=pol)) for ch in chlist])
 
+    log.debug("Read variance")
+    var_pol = 'A' if len(pol) == 1 else 'ADF' # for I only read sigma_II, else read sigma_II, sigma_QQ, sigma_UU
+    variance_maps = dict([(ch, mapreader(freq, surv, ch, halfring=0, pol=("II_cov",), bp_corr=False)) for ch in chlist])
+    for var_m in variance_maps.values():
+        assert np.all(var_m >= 0)
+
     ps_mask, gal_mask = mapreader.read_masks(freq)
 
     metadata = dict( 
@@ -337,9 +343,11 @@ def chdiff(freq, chlist, surv, pol='I', smooth_combine_config=None, root_folder=
         smooth_combine(
                 [ (maps[comb[0]],  1),
                   (maps[comb[1]], -1) ],
+                [ (variance_maps[comb[0]], 1),
+                  (variance_maps[comb[1]], 1) ],
                 base_filename=os.path.join("chdiff", "%s-%s_SS%s" % (comb[0],   comb[1], surv)),
                 root_folder=root_folder,
                 metadata=metadata,
-              smooth_mask=ps_mask,
-              spectra_mask=gal_mask,
+                smooth_mask=ps_mask,
+                spectra_mask=gal_mask,
                 **smooth_combine_config )

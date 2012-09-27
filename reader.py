@@ -49,6 +49,7 @@ class DXReader(BaseMapReader):
         self.subfolder = { "ps_masks":os.path.join(self.folder, "MASKs") }
         self.subfolder["spectra_masks"] = self.subfolder["ps_masks"]
         self.subfolder["bandpass_corrections"] = os.path.join(self.folder, "bandpass_correction")
+        self.subfolder["single_channels"] = os.path.join(self.folder, "channels")
 
     def read_masks(self, freq):
         result = []
@@ -88,24 +89,26 @@ class DXReader(BaseMapReader):
         """
 
         # stokes component
-        components = [stokes.index(p) for p in pol]
-        if len(components) == 1:
-            components = components[0]
+        if isinstance(pol, str):
+            components = [stokes.index(p) for p in pol]
+            if len(components) == 1:
+                components = components[0]
+        else:
+            components = pol
 
         # folder
         folder = self.folder
 
         # single channel
         is_single_channel = chtag and chtag.find('_') < 0 # single channels do not have underscores
-        is_horn = chtag.find('_')<0 and len(chtag) == 2
+        is_horn = chtag.find('_')<0 and len(chtag) == 5
         is_subset = chtag and chtag.find('_')>0 #quadruplets for LFI, subsets for HFI
 
-        if is_single_channel:
+        if is_single_channel or is_horn:
             if freq > 70:
                 freq = chtag
                 chtag = ""
             else:
-                folder = os.path.join(self.folder, "channels")
                 chtag = chtag.translate(None, "LFI") # remove LFI from channel name
 
         # subset tag
@@ -114,7 +117,9 @@ class DXReader(BaseMapReader):
             subset_halfring_tag = "_" + subset_halfring_tag
 
 
-        if is_subset and isinstance(surv, int):
+        if is_single_channel:
+            folder = self.subfolder.get("single_channels", folder)
+        elif is_subset and isinstance(surv, int):
             folder = self.subfolder.get("subsets_surveys", folder)
         elif is_subset:
             folder = self.subfolder.get("subsets", folder)
@@ -201,6 +206,7 @@ class DPCDXReader(DXReader):
         self.subfolder["subsets"] = os.path.join(self.folder, "Couple_horn")
         self.subfolder["subsets_surveys"] = os.path.join(self.folder, "Couple_horn_Surveys")
         self.subfolder["bandpass_corrections"] = os.path.join(self.folder, "IQU_Corrections_Maps_DX9")
+        self.subfolder["single_channels"] = os.path.join(self.folder, "Single_Radiometer")
 
 Readers = {"LFIDPC":DPCDXReader, "NERSC":DXReader}
 

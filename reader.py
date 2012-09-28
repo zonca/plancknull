@@ -200,7 +200,7 @@ class DPCDXReader(DXReader):
         self.folder = folder
         self.nside = nside
         self.subfolder = { "ps_masks":os.path.join(self.folder, "MASKs_DX9") }
-        self.subfolder["spectra_masks"] = "."
+        self.subfolder["spectra_masks"] = "/planck/sci_ops1/null_test_area/"
         self.subfolder["halfrings"] = os.path.join(self.folder, "JackKnife")
         self.subfolder["surveys"] = os.path.join(self.folder, "Surveys")
         self.subfolder["subsets"] = os.path.join(self.folder, "Couple_horn")

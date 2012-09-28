@@ -6,7 +6,9 @@ import numpy as np
 import healpy as hp
 import re
 
-stokes = "IQUHABCDEF" # H for hits,
+stokes_IQU = "IQUHABCDEF"
+stokes_I = "IHA" 
+# H for hits,
 # ABCDEF 6 components of VARIANCE matrix
 # II, IQ, IU, QQ, QU, UU
 
@@ -88,7 +90,13 @@ class DXReader(BaseMapReader):
             single map or tuple of maps as returned by healpy.read_map
         """
 
+        # single channel
+        is_single_channel = chtag and chtag.find('_') < 0 # single channels do not have underscores
+        is_horn = chtag.find('_')<0 and len(chtag) == 5
+        is_subset = chtag and chtag.find('_')>0 #quadruplets for LFI, subsets for HFI
+
         # stokes component
+        stokes = stokes_I if is_single_channel else stokes_IQU
         if isinstance(pol, str):
             components = [stokes.index(p) for p in pol]
             if len(components) == 1:
@@ -99,10 +107,6 @@ class DXReader(BaseMapReader):
         # folder
         folder = self.folder
 
-        # single channel
-        is_single_channel = chtag and chtag.find('_') < 0 # single channels do not have underscores
-        is_horn = chtag.find('_')<0 and len(chtag) == 5
-        is_subset = chtag and chtag.find('_')>0 #quadruplets for LFI, subsets for HFI
 
         if is_single_channel or is_horn:
             if freq > 70:
@@ -165,7 +169,7 @@ class DXReader(BaseMapReader):
                 log.fatal(error_log)
                 raise exceptions.IOError(error_log)
 
-            log.info("Reading %s" % os.path.basename(filename))
+            log.info("Reading %s, components %s" % (os.path.basename(filename), str(components)))
             output_map.append(hp.ma(hp.read_map(filename, components)))
 
         if bp_corr:

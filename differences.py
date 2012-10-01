@@ -132,7 +132,7 @@ def smooth_combine(maps_and_weights, variance_maps_and_weights, fwhm=np.radians(
         smoothed_variance_map = [utils.smooth_variance_map(var, fwhm=fwhm) for var in combined_variance_map]
     else:
         smoothed_variance_map = utils.smooth_variance_map(combined_variance_map[0], fwhm=fwhm)
-    smoothed_variance_map = hp.ud_grade(smoothed_variance_map, degraded_nside)
+    smoothed_variance_map = hp.ud_grade(smoothed_variance_map, degraded_nside, power=2)
 
     # fits
     log.info("Write fits map: " + base_filename + "_map.fits")

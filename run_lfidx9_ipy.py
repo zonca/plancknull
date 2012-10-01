@@ -14,20 +14,11 @@ if paral:
 
 NSIDE = 1024
 
-HORNS = {30:[27,28], 44:[24,25,26], 70:list(range(18,23+1))}
-
-def chlist(freq):
-    horns = HORNS[freq]
-    chs = []
-    for horn in horns:
-        chs += ["LFI%dM" % horn, "LFI%dS" % horn]
-    return chs
-
 log.root.level = log.DEBUG
 
 Reader = reader.Readers[os.environ["NULLTESTS_ENV"]]
 
-mapreader = Reader(os.environ["DDX9_LFI"], nside=NSIDE)
+mapreader = Reader(os.environ["DX9_LFI"], nside=NSIDE)
 
 if __name__ == '__main__':
 
@@ -36,7 +27,7 @@ if __name__ == '__main__':
         tc = Client()
         lview = tc.load_balanced_view() # default load-balanced view
 
-    root_folder = "ddx9"
+    root_folder = "dx9"
     run_halfrings = False
     run_surveydiff = False
     run_chdiff = True
@@ -69,13 +60,15 @@ if __name__ == '__main__':
         print "SURVDIFF"
         survs = [1,2,3,4,5]
         freqs = [30, 44, 70]
-        for bp_corr in [True]:
+        for bp_corr in [False, True]:
             for freq in freqs:
                 smooth_combine_config = dict(fwhm=np.radians(1.), degraded_nside=128, spectra=True)
-                chtags = [""]
-                if freq == 70:
-                    chtags += ["18_23", "19_22", "20_21"]
-                #chtags += chlist(freq)
+                #chtags = [""]
+                chtags = []; log.warning("Disabled full freq")
+                #if freq == 70:
+                #    chtags += ["18_23", "19_22", "20_21"]
+                log.warning("Disabled quadruplets")
+                chtags += utils.chlist(freq)
                 for chtag in chtags:
                     if bp_corr and chtag: # no corr for single ch
                         continue
@@ -102,19 +95,19 @@ if __name__ == '__main__':
         freqs = [30, 44, 70]
             
         for freq in freqs:
-            smooth_combine_config = dict(fwhm=np.radians(10.), degraded_nside=128, spectra=True)
+            smooth_combine_config = dict(fwhm=np.radians(1.), degraded_nside=128, spectra=True)
             for surv in survs:
                 if paral:
                    tasks.append(lview.apply_async(chdiff,freq, ["LFI%d" % h for
                                                                 h in
-                                                                HORNS[freq]],
+                                                                utils.HORNS[freq]],
                                                   surv, pol='I',
                                                   smooth_combine_config=smooth_combine_config,
                                                   root_folder=root_folder,
                                                   log_to_file=True,
                                                   mapreader=mapreader))
                 else:
-                   chdiff(freq, ["LFI%d" % h for h in HORNS[freq]], surv,
+                   chdiff(freq, ["LFI%d" % h for h in utils.HORNS[freq]], surv,
                           pol='I', smooth_combine_config=smooth_combine_config,
                           root_folder=root_folder,
                           log_to_file=False,

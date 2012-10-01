@@ -1,6 +1,15 @@
 import numpy as np
 import healpy as hp
 
+HORNS = {30:[27,28], 44:[24,25,26], 70:list(range(18,23+1))}
+
+def chlist(freq):
+    horns = HORNS[freq]
+    chs = []
+    for horn in horns:
+        chs += ["LFI%dM" % horn, "LFI%dS" % horn]
+    return chs
+
 def get_chisq(m, var):
     return np.mean(m**2/var)
 

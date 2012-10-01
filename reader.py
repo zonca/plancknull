@@ -41,7 +41,7 @@ class DXReader(BaseMapReader):
     """All maps in a single folder, DX9 naming convention"""
 
 
-    def __init__(self, folder, nside=None):
+    def __init__(self, folder, nside=None, debug=False):
         """
         nside : None or int
             if None matches any nside, otherwise integer nside
@@ -52,6 +52,7 @@ class DXReader(BaseMapReader):
         self.subfolder["spectra_masks"] = self.subfolder["ps_masks"]
         self.subfolder["bandpass_corrections"] = os.path.join(self.folder, "bandpass_correction")
         self.subfolder["single_channels"] = os.path.join(self.folder, "channels")
+        self.debug = debug
 
     def read_masks(self, freq):
         result = []
@@ -170,7 +171,12 @@ class DXReader(BaseMapReader):
                 raise exceptions.IOError(error_log)
 
             log.info("Reading %s, components %s" % (os.path.basename(filename), str(components)))
-            output_map.append(hp.ma(hp.read_map(filename, components)))
+            if not self.debug:
+                output_map.append(hp.ma(hp.read_map(filename, components)))
+            else:
+                output_map.append(
+                    np.zeros((np.size(components), hp.nside2npix(1024)))
+                                 )
 
         if bp_corr:
             bp_corr_filename = "iqu_bandpass_correction_%d_" % freq
@@ -180,7 +186,10 @@ class DXReader(BaseMapReader):
                 bp_corr_filename += surv.replace("survey_", "ss")
             bp_corr_filename += ".fits"
             log.info("Applying bandpass correction: " + bp_corr_filename)
-            corr_map = hp.ma(hp.read_map(os.path.join(self.subfolder["bandpass_corrections"], bp_corr_filename), (0,1,2)))
+            if not self.debug:
+                corr_map = hp.ma(hp.read_map(os.path.join(self.subfolder["bandpass_corrections"], bp_corr_filename), (0,1,2)))
+            else:
+                corr_map = [np.zeros(hp.nside2npix(1024)) for c in [0,1,2]]
             for comp, corr in zip(output_map[0], corr_map):
                 comp += corr
 
@@ -196,21 +205,22 @@ class DXReader(BaseMapReader):
 
 class DPCDXReader(DXReader):
 
-    def __init__(self, folder, nside=None):
+    def __init__(self, folder, nside=None, debug=False):
         """
         nside : None or int
             if None matches any nside, otherwise integer nside
         """
         self.folder = folder
         self.nside = nside
-        self.subfolder = { "ps_masks":os.path.join(self.folder, "MASKs_DX9") }
+        self.subfolder = { "ps_masks":os.path.join(self.folder, "MASKs") }
         self.subfolder["spectra_masks"] = "/planck/sci_ops1/null_test_area/"
         self.subfolder["halfrings"] = os.path.join(self.folder, "JackKnife")
         self.subfolder["surveys"] = os.path.join(self.folder, "Surveys")
         self.subfolder["subsets"] = os.path.join(self.folder, "Couple_horn")
         self.subfolder["subsets_surveys"] = os.path.join(self.folder, "Couple_horn_Surveys")
-        self.subfolder["bandpass_corrections"] = os.path.join(self.folder, "IQU_Corrections_Maps_DX9")
+        self.subfolder["bandpass_corrections"] = os.path.join(self.folder, "IQU_Corrections_Maps")
         self.subfolder["single_channels"] = os.path.join(self.folder, "Single_Radiometer")
+        self.debug = debug
 
 Readers = {"LFIDPC":DPCDXReader, "NERSC":DXReader}
 

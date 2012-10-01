@@ -131,7 +131,7 @@ def smooth_combine(maps_and_weights, variance_maps_and_weights, fwhm=np.radians(
     if is_IQU:
         smoothed_variance_map = [utils.smooth_variance_map(var, fwhm=fwhm) for var in combined_variance_map]
     else:
-        smoothed_variance_map = utils.smooth_variance_map(combined_variance_map, fwhm=fwhm)
+        smoothed_variance_map = utils.smooth_variance_map(combined_variance_map[0], fwhm=fwhm)
     smoothed_variance_map = hp.ud_grade(smoothed_variance_map, degraded_nside)
 
     # fits
@@ -325,7 +325,7 @@ def chdiff(freq, chlist, surv, pol='I', smooth_combine_config=None, root_folder=
 
     log.debug("Read variance")
     var_pol = 'A' if len(pol) == 1 else 'ADF' # for I only read sigma_II, else read sigma_II, sigma_QQ, sigma_UU
-    variance_maps = dict([(ch, mapreader(freq, surv, ch, halfring=0, pol=("II_cov",), bp_corr=False)[0]) for ch in chlist])
+    variance_maps = dict([(ch, mapreader(freq, surv, ch, halfring=0, pol=var_pol, bp_corr=False)) for ch in chlist])
     for var_m in variance_maps.values():
         assert np.all(var_m >= 0)
 

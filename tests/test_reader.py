@@ -9,10 +9,10 @@ from plancknull import utils
 
 log.root.level = log.DEBUG
 
-release = "DDX9_LFI"
+release = "DX8_LFI"
 lfi_folder = os.environ[release]
 
-baseline_length = {"DX9_LFI":'', "DDX9_LFI":"1s"}[release]
+baseline_length = {"DDX9_LFI":"1s"}.get(release, '')
 
 read_map = DPCDXReader(lfi_folder, debug=True)
 full_survs = ["nominal", "full"]
@@ -23,7 +23,7 @@ for freq in [30, 44, 70]:
     for surv in survs:
         for halfring in [0, 1, 2]:
             for bp_corr in [False, True]:
-                if (bp_corr and halfring!=0):
+                if (bp_corr and halfring!=0) or ((release == "DX9_LFI" or release == "DX8_LFI") and isinstance(surv, int) and halfring !=0):
                     pass
                 else:
                     try:

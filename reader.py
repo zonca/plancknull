@@ -4,7 +4,6 @@ import logging as log
 import os.path
 import numpy as np
 import healpy as hp
-import re
 
 stokes_IQU = "IQUHABCDEF"
 stokes_I = "IHA" 

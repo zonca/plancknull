@@ -1,5 +1,6 @@
 import numpy as np
 import healpy as hp
+import logging as log
 
 HORNS = {30:[27,28], 44:[24,25,26], 70:list(range(18,23+1))}
 
@@ -13,12 +14,21 @@ def chlist(freq):
 def get_chisq(m, var):
     return np.mean(m**2/var)
 
-def get_whitenoise_cl(var):
+def get_whitenoise_cl(var, mask):
     """White noise C_ell
 
     Computes the C_ell's of variance map as
-    mean variance multiplied by the pixel area"""
-    return var.mean() * 4 * np.pi / len(var)
+    mean variance multiplied by the pixel area
+    
+    Parameters
+    ----------
+    var : array
+        variance map, 1 component only
+    mask : array
+        mask to be applied, True or 1 if pixel IS masked
+    """
+    log.info("Masked pixels: %d" % mask.sum())
+    return (var.filled() * ~mask).mean() * 4 * np.pi / len(var)
 
 def smooth_variance_map(var_m, fwhm):
     """Smooth a variance map

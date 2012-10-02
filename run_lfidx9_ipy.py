@@ -8,12 +8,14 @@ import reader
 
 import utils
 
-paral = False
+paral = True
 if paral:
     from IPython.parallel import Client
 
 NSIDE = 1024
 BASELINE_LENGTH = "1s"
+SMOOTHING = 10 #deg
+DEGRADED_NSIDE = 128
 
 log.root.level = log.DEBUG
 
@@ -30,17 +32,17 @@ if __name__ == '__main__':
         lview = tc.load_balanced_view() # default load-balanced view
 
     root_folder = "ddx92"
-    run_halfrings = False
+    run_halfrings = True
     run_surveydiff = True
-    run_chdiff = False
+    run_chdiff = True
     compute_union_mask = False
 
     if run_halfrings:
         print "HALFRINGS"
         survs = ["nominal", "full"]
-        freqs = [30]#,44,70]
+        freqs = [30,44,70]
         for freq in freqs:
-            smooth_combine_config = dict(fwhm=np.radians(1.), degraded_nside=128, spectra=True)
+            smooth_combine_config = dict(fwhm=np.radians(SMOOTHING), degraded_nside=DEGRADED_NSIDE, spectra=True)
             chtags = [""]
             if freq == 70:
                 chtags += ["18_23", "19_22", "20_21"]
@@ -61,15 +63,15 @@ if __name__ == '__main__':
     if run_surveydiff:
         print "SURVDIFF"
         survs = [1,2,3,4,5]
-        freqs = [30]#, 44, 70]
-        for bp_corr in [False]:#, True]:
+        freqs = [30, 44, 70]
+        for bp_corr in [False, True]:
             for freq in freqs:
-                smooth_combine_config = dict(fwhm=np.radians(1.), degraded_nside=128, spectra=True)
+                smooth_combine_config = dict(fwhm=np.radians(SMOOTHING), degraded_nside=DEGRADED_NSIDE, spectra=True)
                 chtags = [""]
                 #chtags = []; log.warning("Disabled full freq")
-                #if freq == 70:
-                #    chtags += ["18_23", "19_22", "20_21"]
-                log.warning("Disabled quadruplets")
+                if freq == 70:
+                    chtags += ["18_23", "19_22", "20_21"]
+                #log.warning("Disabled quadruplets")
                 chtags += utils.chlist(freq)
                 for chtag in chtags:
                     if bp_corr and chtag: # no corr for single ch
@@ -97,7 +99,7 @@ if __name__ == '__main__':
         freqs = [30, 44, 70]
             
         for freq in freqs:
-            smooth_combine_config = dict(fwhm=np.radians(1.), degraded_nside=128, spectra=True)
+            smooth_combine_config = dict(fwhm=np.radians(SMOOTHING), degraded_nside=DEGRADED_NSIDE, spectra=True)
             for surv in survs:
                 if paral:
                    tasks.append(lview.apply_async(chdiff,freq, ["LFI%d" % h for

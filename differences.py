@@ -118,6 +118,13 @@ def smooth_combine(maps_and_weights, variance_maps_and_weights, fwhm=np.radians(
             log.error("Write IQU Cls to fits requires more recent version of healpy")
         del cl
 
+        # expected cl from white noise
+        # /4. to have same normalization of cl
+        metadata["whitenoise_cl"] = utils.get_whitenoise_cl(combined_variance_map[0]/4., mask=combined_map[0].mask) / sky_frac
+        if is_IQU:
+            # /2. is the mean, /4. is the half difference in power
+            metadata["whitenoise_cl_P"] = utils.get_whitenoise_cl((combined_variance_map[1] + combined_variance_map[2])/2./4., mask=combined_map[1].mask | combined_map[2].mask) / sky_frac 
+
         # restore masks
         for m, mask in zip(combined_map, orig_mask):
             m.mask = mask
@@ -147,9 +154,6 @@ def smooth_combine(maps_and_weights, variance_maps_and_weights, fwhm=np.radians(
 
     if spectra:
         metadata["sky_fraction"] = sky_frac
-        metadata["whitenoise_cl"] = utils.get_whitenoise_cl(combined_variance_map[0])
-        if is_IQU:
-            metadata["whitenoise_cl_P"] = utils.get_whitenoise_cl(.5 * (combined_variance_map[1] + combined_variance_map[2]))
         with open(os.path.join(root_folder, base_filename + "_cl.json"), 'w') as f:
             json.dump(metadata, f)
 

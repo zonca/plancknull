@@ -8,7 +8,7 @@ import reader
 
 import utils
 
-paral = True
+paral = False
 if paral:
     from IPython.parallel import Client
 
@@ -19,7 +19,7 @@ log.root.level = log.DEBUG
 
 Reader = reader.Readers[os.environ["NULLTESTS_ENV"]]
 
-mapreader = Reader(os.environ["DX9_LFI"], nside=NSIDE,
+mapreader = Reader(os.environ["DDX9_LFI"], nside=NSIDE,
                    baseline_length=BASELINE_LENGTH)
 
 if __name__ == '__main__':
@@ -29,16 +29,16 @@ if __name__ == '__main__':
         tc = Client()
         lview = tc.load_balanced_view() # default load-balanced view
 
-    root_folder = "dx9"
+    root_folder = "ddx92"
     run_halfrings = False
-    run_surveydiff = False
-    run_chdiff = True
+    run_surveydiff = True
+    run_chdiff = False
     compute_union_mask = False
 
     if run_halfrings:
         print "HALFRINGS"
         survs = ["nominal", "full"]
-        freqs = [30,44,70]
+        freqs = [30]#,44,70]
         for freq in freqs:
             smooth_combine_config = dict(fwhm=np.radians(1.), degraded_nside=128, spectra=True)
             chtags = [""]
@@ -61,12 +61,12 @@ if __name__ == '__main__':
     if run_surveydiff:
         print "SURVDIFF"
         survs = [1,2,3,4,5]
-        freqs = [30, 44, 70]
-        for bp_corr in [False, True]:
+        freqs = [30]#, 44, 70]
+        for bp_corr in [False]:#, True]:
             for freq in freqs:
                 smooth_combine_config = dict(fwhm=np.radians(1.), degraded_nside=128, spectra=True)
-                #chtags = [""]
-                chtags = []; log.warning("Disabled full freq")
+                chtags = [""]
+                #chtags = []; log.warning("Disabled full freq")
                 #if freq == 70:
                 #    chtags += ["18_23", "19_22", "20_21"]
                 log.warning("Disabled quadruplets")

@@ -13,6 +13,13 @@ def chlist(freq):
 def get_chisq(m, var):
     return np.mean(m**2/var)
 
+def get_whitenoise_cl(var):
+    """White noise C_ell
+
+    Computes the C_ell's of variance map as
+    mean variance multiplied by the pixel area"""
+    return var.mean() * 4 * np.pi / len(var)
+
 def smooth_variance_map(var_m, fwhm):
     """Smooth a variance map
 

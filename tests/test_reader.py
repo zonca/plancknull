@@ -14,7 +14,7 @@ lfi_folder = os.environ[release]
 
 baseline_length = {"DDX9_LFI":"1s"}.get(release, '')
 
-read_map = DPCDXReader(lfi_folder, debug=True)
+read_map = DPCDXReader(lfi_folder, debug=True, baseline_length=baseline_length)
 full_survs = ["nominal", "full"]
 survs = full_survs + list(range(1, 5+1))
 
@@ -27,7 +27,7 @@ for freq in [30, 44, 70]:
                     pass
                 else:
                     try:
-                        read_map(freq, surv, chtag='', halfring=halfring, pol="IQU", bp_corr=bp_corr, baseline_length=baseline_length)
+                        read_map(freq, surv, chtag='', halfring=halfring, pol="IQU", bp_corr=bp_corr)
                     except exceptions.IOError as e:
                         pass
 
@@ -41,7 +41,7 @@ for chtag in ["18_23", "19_22", "20_21"]:
                 pass
             else:
                 try:
-                    read_map(freq, surv, chtag=chtag, halfring=halfring, pol="I", baseline_length=baseline_length)
+                    read_map(freq, surv, chtag=chtag, halfring=halfring, pol="I")
                 except exceptions.IOError as e:
                     pass
 
@@ -51,7 +51,7 @@ for freq in [30, 44, 70]:
     for surv in range(1, 5+1):
         for chtag in utils.chlist(freq):
             try:
-                read_map(freq, surv, chtag=chtag, halfring=0, pol="I", baseline_length=baseline_length)
+                read_map(freq, surv, chtag=chtag, halfring=0, pol="I")
             except exceptions.IOError as e:
                 pass
 

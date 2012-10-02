@@ -40,13 +40,17 @@ class DXReader(BaseMapReader):
     """All maps in a single folder, DX9 naming convention"""
 
 
-    def __init__(self, folder, nside=None, debug=False):
+    def __init__(self, folder, nside=None, baseline_length="1s", debug=False):
         """
         nside : None or int
             if None matches any nside, otherwise integer nside
+        baseline_length : string
+            baseline length string, typically "1m" or "1s"
+            if None, it is not used to match the filename
         """
         self.folder = folder
         self.nside = nside
+        self.baseline_length = baseline_length
         self.subfolder = { "ps_masks":os.path.join(self.folder, "MASKs") }
         self.subfolder["spectra_masks"] = self.subfolder["ps_masks"]
         self.subfolder["bandpass_corrections"] = os.path.join(self.folder, "bandpass_correction")
@@ -65,7 +69,7 @@ class DXReader(BaseMapReader):
             result.append(np.logical_not(np.floor(hp.ud_grade(hp.read_map(file_name), self.nside)).astype(np.bool)))
         return tuple(result)
 
-    def __call__(self, freq, surv, chtag='', halfring=0, pol="I", bp_corr=False, baseline_length="1s"):
+    def __call__(self, freq, surv, chtag='', halfring=0, pol="I", bp_corr=False):
         """Read a map and return the array of pixels.
 
         Parameters
@@ -80,9 +84,6 @@ class DXReader(BaseMapReader):
             0 for full, 1 and 2 for first and second halfrings
         pol : string
             required polarization components, e.g. 'I', 'Q', 'IQU'
-        baseline_length : string
-            baseline length string, typically "1m" or "1s"
-            if None, it is not used to match the filename
 
         Returns
         -------
@@ -144,8 +145,8 @@ class DXReader(BaseMapReader):
 
         # baseline length
         baseline_length_tag = ''
-        if baseline_length:
-            baseline_length_tag = '_' + baseline_length
+        if self.baseline_length:
+            baseline_length_tag = '_' + self.baseline_length
 
         # read_map
         output_map = []
@@ -204,13 +205,14 @@ class DXReader(BaseMapReader):
 
 class DPCDXReader(DXReader):
 
-    def __init__(self, folder, nside=None, debug=False):
+    def __init__(self, folder, nside=None, debug=False, baseline_length="1s"):
         """
         nside : None or int
             if None matches any nside, otherwise integer nside
         """
         self.folder = folder
         self.nside = nside
+        self.baseline_length = baseline_length
         self.subfolder = { "ps_masks":os.path.join(self.folder, "MASKs") }
         self.subfolder["spectra_masks"] = "/planck/sci_ops1/null_test_area/"
         self.subfolder["halfrings"] = os.path.join(self.folder, "JackKnife")

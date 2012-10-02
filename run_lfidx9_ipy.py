@@ -13,12 +13,14 @@ if paral:
     from IPython.parallel import Client
 
 NSIDE = 1024
+BASELINE_LENGTH = "1s"
 
 log.root.level = log.DEBUG
 
 Reader = reader.Readers[os.environ["NULLTESTS_ENV"]]
 
-mapreader = Reader(os.environ["DX9_LFI"], nside=NSIDE)
+mapreader = Reader(os.environ["DX9_LFI"], nside=NSIDE,
+                   baseline_length=BASELINE_LENGTH)
 
 if __name__ == '__main__':
 

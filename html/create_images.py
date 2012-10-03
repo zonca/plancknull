@@ -23,9 +23,15 @@ def plot_figure(metadata):
         allmap = [hp.ma(hp.read_map(os.path.join(root_folder, metadata["file_name"])))]
     for comp, m in zip("IQU", allmap):
         if comp in "QU":
-            plot_range = 10
+            plot_range = 30
         else:
-            plot_range = 10
+            plot_range = 30
+        if len(allmap) == 1: #only T, single ch
+            plot_range = 60
+        is_single_channel = isinstance(metadata["channel"], basestring) and len(metadata["channel"])==6
+        if is_single_channel:
+            if int(metadata["channel"][3:5]) < 24: # 70GHz
+                plot_range = 100
         test_type = metadata["base_file_name"].split("/")[0]
         if isinstance(metadata["channel"], list):
             metadata["channel"] = "_".join(metadata["channel"])
@@ -65,6 +71,6 @@ for fold in ["halfrings", "surveydiff", "chdiff"]:
     except:
         pass
 
-for f in glob(os.path.join(root_folder, "*", "*map.json")):
+for f in glob(os.path.join(root_folder, "chdiff", "*map.json")):
     print f
     plot_figure(json.load(open(f)))

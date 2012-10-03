@@ -232,6 +232,7 @@ def halfrings(freq, ch, surv, pol='I', smooth_combine_config=None, root_folder="
               smooth_mask=ps_mask,
               spectra_mask=gal_mask,
             **smooth_combine_config)
+    log.info("Completed")
 
 def surveydiff(freq, ch, survlist=[1,2,3,4,5], pol='I', root_folder="out/", smooth_combine_config=None, log_to_file=False, bp_corr=False, mapreader=None):
     """Survey differences
@@ -305,6 +306,7 @@ def surveydiff(freq, ch, survlist=[1,2,3,4,5], pol='I', root_folder="out/", smoo
               smooth_mask=ps_mask,
               spectra_mask=gal_mask,
                 **smooth_combine_config )
+    log.info("Completed")
 
 def chdiff(freq, chlist, surv, pol='I', smooth_combine_config=None, root_folder="out/", log_to_file=False, mapreader=None):
     """Channel difference
@@ -358,3 +360,4 @@ def chdiff(freq, chlist, surv, pol='I', smooth_combine_config=None, root_folder=
                 smooth_mask=ps_mask,
                 spectra_mask=gal_mask,
                 **smooth_combine_config )
+    log.info("Completed")

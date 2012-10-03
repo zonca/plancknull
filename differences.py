@@ -133,16 +133,25 @@ def smooth_combine(maps_and_weights, variance_maps_and_weights, fwhm=np.radians(
     log.debug("Smooth")
 
     smoothed_map = hp.smoothing(combined_map, fwhm=fwhm)
-    smoothed_map = hp.ud_grade(smoothed_map, degraded_nside)
 
     if is_IQU:
         smoothed_variance_map = [utils.smooth_variance_map(var, fwhm=fwhm) for var in combined_variance_map]
+        for comp,m,var in zip("IQU", smoothed_map, smoothed_variance_map):
+             metadata["map_chi2_%s" % comp] = np.mean(m**2 / var) 
+        for comp,m,var in zip("IQU", combined_map, combined_variance_map):
+             metadata["map_unsm_chi2_%s" % comp] = np.mean(m**2 / var) 
     else:
         smoothed_variance_map = utils.smooth_variance_map(combined_variance_map[0], fwhm=fwhm)
-    smoothed_variance_map = hp.ud_grade(smoothed_variance_map, degraded_nside, power=2)
+        metadata["map_chi2"] = np.mean(smoothed_map**2 / smoothed_variance_map) 
+        metadata["map_unsm_chi2"] = np.mean(combined_map[0]**2 / combined_variance_map[0]) 
+
+    del smoothed_variance_map
+    # removed downgrade of variance
+    # smoothed_variance_map = hp.ud_grade(smoothed_variance_map, degraded_nside, power=2)
 
     # fits
     log.info("Write fits map: " + base_filename + "_map.fits")
+    smoothed_map = hp.ud_grade(smoothed_map, degraded_nside)
     hp.write_map(os.path.join(root_folder, base_filename + "_map.fits"), smoothed_map)
 
     # metadata
@@ -163,14 +172,12 @@ def smooth_combine(maps_and_weights, variance_maps_and_weights, fwhm=np.radians(
     metadata["smooth_fwhm_deg"] = "%.2f" % np.degrees(fwhm)
     metadata["out_nside"] = degraded_nside
     if is_IQU:
-        for comp,m,var in zip("IQU", smoothed_map, smoothed_variance_map):
+        for comp,m in zip("IQU", smoothed_map):
              metadata["map_p2p_%s" % comp] = m.ptp()
              metadata["map_std_%s" % comp] = m.std()
-             metadata["map_chi2_%s" % comp] = np.mean(m**2 / var) 
     else:
         metadata["map_p2p"] = smoothed_map.ptp()
         metadata["map_std"] = smoothed_map.std()
-        metadata["map_chi2"] = np.mean(smoothed_map**2 / smoothed_variance_map) 
 
     with open(os.path.join(root_folder, base_filename + "_map.json"), 'w') as f:
         json.dump(metadata, f)

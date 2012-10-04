@@ -8,12 +8,12 @@ import reader
 
 import utils
 
-paral = True
+paral = False
 if paral:
     from IPython.parallel import Client
 
 NSIDE = 1024
-BASELINE_LENGTH = "1s"
+BASELINE_LENGTH = ""
 SMOOTHING = 10 #deg
 DEGRADED_NSIDE = 128
 
@@ -21,7 +21,7 @@ log.root.level = log.DEBUG
 
 Reader = reader.Readers[os.environ["NULLTESTS_ENV"]]
 
-mapreader = Reader(os.environ["DDX9_LFI"], nside=NSIDE,
+mapreader = Reader(os.environ["DX8_LFI"], nside=NSIDE,
                    baseline_length=BASELINE_LENGTH)
 
 if __name__ == '__main__':
@@ -31,7 +31,7 @@ if __name__ == '__main__':
         tc = Client()
         lview = tc.load_balanced_view() # default load-balanced view
 
-    root_folder = "ddx92"
+    root_folder = "dx8"
     run_halfrings = True
     run_surveydiff = True
     run_chdiff = True

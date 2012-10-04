@@ -1,20 +1,14 @@
 import exceptions
 import logging as log
-import os
 
 import sys
 sys.path.append("../../")
-from plancknull.reader import DPCDXReader
+from plancknull.reader import DXReader
 from plancknull import utils
 
 log.root.level = log.DEBUG
 
-release = "DX8_LFI"
-lfi_folder = os.environ[release]
-
-baseline_length = {"DDX9_LFI":"1s"}.get(release, '')
-
-read_map = DPCDXReader(lfi_folder, debug=True, baseline_length=baseline_length)
+read_map = DXReader(sys.argv[1], debug=True)
 full_survs = ["nominal", "full"]
 survs = full_survs + list(range(1, 5+1))
 
@@ -23,13 +17,13 @@ for freq in [30, 44, 70]:
     for surv in survs:
         for halfring in [0, 1, 2]:
             for bp_corr in [False, True]:
-                if (bp_corr and halfring!=0) or ((release == "DX9_LFI" or release == "DX8_LFI") and isinstance(surv, int) and halfring !=0):
+                if (bp_corr and halfring!=0):
                     pass
                 else:
                     try:
                         read_map(freq, surv, chtag='', halfring=halfring, pol="IQU", bp_corr=bp_corr)
-                    except exceptions.IOError as e:
-                        pass
+                    except exceptions.Exception as e:
+                        print e
 
 
 print "QUADRUPLETS"
@@ -42,8 +36,8 @@ for chtag in ["18_23", "19_22", "20_21"]:
             else:
                 try:
                     read_map(freq, surv, chtag=chtag, halfring=halfring, pol="I")
-                except exceptions.IOError as e:
-                    pass
+                except exceptions.Exception as e:
+                    print e
 
 
 print "CHANNELS"
@@ -52,8 +46,17 @@ for freq in [30, 44, 70]:
         for chtag in utils.chlist(freq):
             try:
                 read_map(freq, surv, chtag=chtag, halfring=0, pol="I")
-            except exceptions.IOError as e:
-                pass
+            except exceptions.Exception as e:
+                print e
+
+print "horns"
+for freq in [30, 44, 70]:
+    for surv in range(1, 5+1):
+        for horn in utils.HORNS[freq]:
+            try:
+                read_map(freq, surv, chtag="LFI%d" % horn, halfring=0, pol="I")
+            except exceptions.Exception as e:
+                print e
 
 #hfi_folder = os.environ["DX9_HFI"]
 #

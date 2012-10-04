@@ -11,9 +11,18 @@ This repository provides a library for interactive and serial usage:
 
 * `differences.py`
 
-and an example script for LFI DX9 that can run either in parallel or serial:
+and a run script that can run either serially or in parallel:
 
-* `run_lfidx9_ipy.py` 
+* `run_null.py` 
+
+`run_null.py` requires a configuration file as argument, for example:
+
+* `run_dx9_10deg.conf`
+
+which includes all the parameter for the run and also the path to the configuration for
+reading the maps from disk, in this case:
+
+* `read_dx9.conf`
 
 Once the tests have been executed, the user can produce a HTML report
 using
@@ -23,8 +32,9 @@ which is a separate program.
 Library
 -------
 
-Input maps are read by a class that inherits from `reader.BaseMapReader` that implements a `__call__` method that given channel, frequency, survey, healfrings and requested polarization returns a map (typically either "I" or "IQU").
-Therefore the first step with a new dataset is to implement a new `reader.BaseMapReader` child class.
+Input maps are read by a class that inherits from `reader.BaseMapReader` that implements a `__call__` method that given channel, frequency, survey, halfrings and requested polarization returns a map (typically either "I" or "IQU").
+Therefore the first step with a new dataset is to implement a new `reader.BaseMapReader` child class, or to 
+use the reader.DXReader with a file patters configuration files, for example `read_dx9.conf`.
 
 The `differences.py` library provides 3 functions that create specific null tests, they read the maps thanks to the input reader object:
 
@@ -37,7 +47,7 @@ Those functions can be used interactively, see their docstrings and the example 
 Serial usage
 ------------
 
-In order to run all null tests serially, just set `paral=False` and run `python run_lfidx9_ipy.py`, this might take few hours, as about 380 maps are produced, the outputs will be stored in the `dx9/` folder.
+In order to run all null tests serially, just set `paral=False` and run `python run_null.py run_dx9_10deg.conf`, this might take few hours, as about 380 maps are produced, the outputs will be stored in the `output_folder` folder.
 
 Parallelization
 ---------------
@@ -49,9 +59,4 @@ See [`ipython` documentation](http://ipython.org/ipython-doc/stable/install/inst
 Once `ipython` is installed, you can just:
  * run `ipcontroller` on the login node
  * submit a pbs job which spawns a number of `ipengines` (see `ipython` documentation)
- * open an `ipython` session on the login node (possibly inside `screen`) and then launch `run run_lfidx9_ipy.py` after setting `paral=True` in the code.
-
-Known issues
-------------
-
-Currently logging does not work when the script is launched in parallel.
+ * open an `ipython` session on the login node (possibly inside `screen`) and then launch `run run_null.py run_dx9_10deg.conf` after setting `paral=True` in the configuration file.

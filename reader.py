@@ -69,13 +69,9 @@ class DXReader(BaseMapReader):
 
     def read_masks(self, freq):
         result = []
-        file_names = [
-            glob(os.path.join(self.subfolder["ps_masks"],
-                              'mask_ps_%dGHz_*.fits' % freq))[-1],
-            glob(os.path.join(self.subfolder["spectra_masks"],
-                              'union_mask_%d.fits' % freq))[-1]]
+        filenames = [get_filename(self.config.get("Templates", mask_type).format(freq)) for mask_type in ["ps_mask", "spectra_mask"]]
 
-        for file_name in file_names:
+        for file_name in filenames:
             result.append(np.logical_not(np.floor(hp.ud_grade(hp.read_map(file_name), self.nside)).astype(np.bool)))
         return tuple(result)
 

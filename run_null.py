@@ -1,6 +1,4 @@
 import numpy as np
-import healpy as hp
-from glob import glob
 import logging as log
 import os
 from differences import halfrings, surveydiff, chdiff 
@@ -18,8 +16,8 @@ if len(sys.argv) < 2:
 config = SafeConfigParser()
 config.read(sys.argv[1])
 
-paral = config.getboolean("paral")
-root_folder = config.get("output_folder")
+paral = config.getboolean("run", "paral")
+root_folder = config.get("run", "output_folder")
 try:
     os.mkdir(root_folder)
 except:
@@ -27,11 +25,10 @@ except:
 if paral:
     from IPython.parallel import Client
 
-
 log.root.level = log.DEBUG
 
 # create map reader
-mapreader = reader.DXReader(config.get("run", "reader_conf"), nside=config.getint("run", "nside"))
+mapreader = reader.DXReader(config.get("run", "reader_conf"), nside=config.getint("smooth_combine", "nside"))
 smooth_combine_config = dict(fwhm=np.radians(config.getfloat("smooth_combine", "smoothing")), degraded_nside=config.getint("smooth_combine", "degraded_nside"), spectra=True)
 
 if paral:
@@ -115,25 +112,6 @@ if config.getboolean("run", "run_chdiff"):
                       root_folder=root_folder,
                       log_to_file=False,
                       mapreader=mapreader)
-
-if config.getboolean("run", "compute_union_mask"):
-    assert ~paral
-    print "UNIONMASK"
-    survs = [1,2,3,4,5]
-    freqs = [30, 44, 70]
-    for freq in freqs:
-        mask = utils.read_mask(
-            glob(os.path.join(os.environ["DDX9_LFI"], "MASKs",
-                          'destripingmask_%d.fits' % freq))[-1]
-                         , nside= )
-        mask |= utils.read_mask("/global/project/projectdirs/planck/user/zonca/masks/wmap_polarization_analysis_mask_r9_7yr_v4.fits", nside=NSIDE)
-        chtags = [""]
-        if freq == 70:
-            chtags += ["18_23", "19_22", "20_21"]
-        for chtag in chtags:
-            for surv in survs:
-                mask |= mapreader(freq, surv, chtag, halfring=0, pol='Q').mask
-        hp.write_map("union_mask_%d.fits" % freq, mask)
 
 if paral:
     print("Wait for %d tasks to complete" % len(tasks))

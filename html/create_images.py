@@ -8,7 +8,7 @@ sys.path.append("..")
 
 import healpy as hp
 
-root_folder = "../ddx9"
+root_folder = "../ddx92"
 out_folder = "../dx9null/images"
 
 try:
@@ -23,11 +23,11 @@ def plot_figure(metadata):
         allmap = [hp.ma(hp.read_map(os.path.join(root_folder, metadata["file_name"])))]
     for comp, m in zip("IQU", allmap):
         if comp in "QU":
-            plot_range = 30
+            plot_range = 20
         else:
-            plot_range = 30
+            plot_range = 20
         if len(allmap) == 1: #only T, single ch
-            plot_range = 60
+            plot_range = 20
         is_single_channel = isinstance(metadata["channel"], basestring) and len(metadata["channel"])==6
         if is_single_channel:
             if int(metadata["channel"][3:5]) < 24: # 70GHz
@@ -71,6 +71,6 @@ for fold in ["halfrings", "surveydiff", "chdiff"]:
     except:
         pass
 
-for f in glob(os.path.join(root_folder, "chdiff", "*map.json")):
+for f in glob(os.path.join(root_folder, "*", "*map.json")):
     print f
     plot_figure(json.load(open(f)))

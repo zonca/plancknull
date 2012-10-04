@@ -12,7 +12,7 @@ cm = plt.get_cmap('jet')
 num_colors = 11
 colors = [cm(float(i)/num_colors) for i in range(num_colors) ]
 
-root_folder = "../ddx9/"
+root_folder = "../ddx92/"
 out_folder = "../dx9null/"
 
 def write_html(filename, t, c):
@@ -181,7 +181,7 @@ for comp in "IQU":
 bp_tag = {True:"_bpcorr", False:''}
 survs = [1,2,3,4,5]
 
-cl_comp = {"T":0, "E":1}
+cl_comp = {"T":0, "E":1, "B":2}
 table_list = []
 for comp in "TE":
     tag = comp + comp
@@ -238,10 +238,16 @@ for comp in "TE":
                     ell = np.arange(len(spec))
                     binspec = spec
                     plt.loglog(ell, binspec, label="nom half", color=colors[i])
-                    wmap = np.loadtxt("wmap_%s_spectrum_7yr_v4p1.txt" % tag.lower())
-                    wmap_ell = wmap[:,0]
-                    wmap_spec = wmap[:,1] / (wmap_ell * (wmap_ell + 1) / (2*np.pi))
-                    plt.loglog(wmap_ell, wmap_spec, label="wmap " + tag, color='k')
+                    #wmap = np.loadtxt("wmap_binned_%s_spectrum_7yr_v4p1.txt" % tag.lower())
+                    #wmap_ell = wmap[:,0]
+                    #wmap_spec = wmap[:,1] / (wmap_ell * (wmap_ell + 1) / (2*np.pi))
+                    ##plt.loglog(wmap_ell, wmap_spec, label="wmap " + tag, color='k')
+                    whitenoise_cl_field = "whitenoise_cl"
+                    if comp in "EB":
+                        whitenoise_cl_field += '_P'
+
+                    plt.loglog(ell, np.ones_like(ell) * metadata[whitenoise_cl_field]*1e12, 'k--', label="variance")
+                    #print metadata[whitenoise_cl_field]*1e12
                     plt.ylim([1e-3, 1])
                     leg = plt.legend(loc=0, prop={"size":9})
                     leg.legendPatch.set_alpha(0.5)

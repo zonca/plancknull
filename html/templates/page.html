@@ -11,8 +11,8 @@
 
 <ul>
     <li> simple difference (M1 - M2)</li>
-    <li> smoothing by 1 degree gaussian beam (not to 1 degree)</li>
-    <li> ploted on linear scale on +- 30 microK</li>
+    <li> smoothing by 10 degree gaussian beam (not to 10 degree)</li>
+    <li> ploted on linear scale on +- 20 microK</li>
 </ul>
 
 <a name="summary"><h2>Summary table</h2></a>
@@ -28,7 +28,7 @@ Change colors threshold:
 <ul>
     <li> (M1 - M2)**2/(variance_M1 + variance_M2), variance from DPC maps</li>
     <li> same masking as maps </li>
-    <li> smoothing by 1 degree both map and variance after combining them </li>
+    <li> smoothing by 10 degree both map and variance after combining them </li>
     <li> variance smoothed according to J.P. Leahy algorithm, implementation <a href="https://github.com/zonca/plancknull/blob/master/utils.py">on Github</a></li>
     <li> taking the average of all the unmasked pixels </li>
 </ul>
@@ -68,6 +68,7 @@ Change colors threshold:
     <li>Mask: union mask of all surveys, DPC point source mask, DPC galaxy mask (used for destriping), WMAP polarization mask</li>
     <li>spectra binned (using the mean) on 5 ell's</li>
     <li>neither smoothing nor degrading applied</li>
+    <li>expected white noise C_ell of the halfring difference computed from variance as mean(variance)*pixarea/sky_frac, setting masked pixels to zero</li>
 </ul>
 <h3>Mask</h3>
 

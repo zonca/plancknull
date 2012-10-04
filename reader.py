@@ -1,5 +1,5 @@
 from glob import glob
-from ConfigParser import ConfigParser
+from ConfigParser import SafeConfigParser
 import exceptions
 import logging as log
 import os.path
@@ -63,7 +63,7 @@ class DXReader(BaseMapReader):
         nside : None or int
             if None matches any nside, otherwise integer nside
         """
-        self.config = ConfigParser(); self.config.read(config_filename)
+        self.config = SafeConfigParser(); self.config.read(config_filename)
         self.nside = nside
         self.debug = debug
 

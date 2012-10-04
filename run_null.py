@@ -3,7 +3,7 @@ import logging as log
 import os
 from differences import halfrings, surveydiff, chdiff 
 import reader
-from ConfigParser import SafeConfigParser
+from ConfigParser import SafeConfigParser, NoOptionError
 
 import utils
 import sys
@@ -39,7 +39,7 @@ if paral:
 if config.getboolean("run", "run_halfrings"):
     print "HALFRINGS"
     survs = ["nominal", "full"]
-    freqs = [30,44,70]
+    freqs = [30, 44, 70]
     for freq in freqs:
         chtags = [""]
         if freq == 70:
@@ -53,10 +53,13 @@ if config.getboolean("run", "run_halfrings"):
                                                    root_folder=root_folder,log_to_file=True,
                                                    mapreader=mapreader))
                 else:
-                    halfrings(freq, chtag, surv, pol='IQU',
-                              smooth_combine_config=smooth_combine_config,
-                              root_folder=root_folder,log_to_file=False,
-                             mapreader=mapreader)
+                    try:
+                        halfrings(freq, chtag, surv, pol='IQU',
+                                  smooth_combine_config=smooth_combine_config,
+                                  root_folder=root_folder,log_to_file=False,
+                                 mapreader=mapreader)
+                    except NoOptionError as e:
+                        log.error("SKIP TEST: " + e.message)
 
 if config.getboolean("run", "run_surveydiff"):
     print "SURVDIFF"
@@ -85,10 +88,13 @@ if config.getboolean("run", "run_surveydiff"):
                                                    bp_corr=bp_corr,
                                                    mapreader=mapreader))
                 else:
-                    surveydiff(freq, chtag, survs, pol=pol,
-                               smooth_combine_config=smooth_combine_config,
-                               root_folder=root_folder,log_to_file=False,
-                               bp_corr=bp_corr, mapreader=mapreader)
+                    try:
+                        surveydiff(freq, chtag, survs, pol=pol,
+                                   smooth_combine_config=smooth_combine_config,
+                                   root_folder=root_folder,log_to_file=False,
+                                   bp_corr=bp_corr, mapreader=mapreader)
+                    except NoOptionError as e:
+                        log.error("SKIP TEST: " + e.message)
 
 if config.getboolean("run", "run_chdiff"):
     print "CHDIFF"
@@ -107,11 +113,14 @@ if config.getboolean("run", "run_chdiff"):
                                               log_to_file=True,
                                               mapreader=mapreader))
             else:
-               chdiff(freq, ["LFI%d" % h for h in utils.HORNS[freq]], surv,
-                      pol='I', smooth_combine_config=smooth_combine_config,
-                      root_folder=root_folder,
-                      log_to_file=False,
-                      mapreader=mapreader)
+                try:
+                    chdiff(freq, ["LFI%d" % h for h in utils.HORNS[freq]], surv,
+                          pol='I', smooth_combine_config=smooth_combine_config,
+                          root_folder=root_folder,
+                          log_to_file=False,
+                          mapreader=mapreader)
+                except NoOptionError as e:
+                    log.error("SKIP TEST: " + e.message)
 
 if paral:
     print("Wait for %d tasks to complete" % len(tasks))

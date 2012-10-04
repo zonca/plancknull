@@ -9,20 +9,24 @@ import reader
 import utils
 
 paral = False
+# script configuration
+nside = 1024
+smoothing = 10 #deg
+degraded_nside = 128
+conf_file = "dx9.conf"
+output_folder = "dx8"
+run_halfrings = True
+run_surveydiff = True
+run_chdiff = True
+compute_union_mask = False
+
 if paral:
     from IPython.parallel import Client
 
-NSIDE = 1024
-BASELINE_LENGTH = ""
-SMOOTHING = 10 #deg
-DEGRADED_NSIDE = 128
 
 log.root.level = log.DEBUG
 
-Reader = reader.Readers[os.environ["NULLTESTS_ENV"]]
-
-mapreader = Reader(os.environ["DX8_LFI"], nside=NSIDE,
-                   baseline_length=BASELINE_LENGTH)
+mapreader = reader.DXReader(CONF_FILE, nside=NSIDE)
 
 if __name__ == '__main__':
 
@@ -31,11 +35,6 @@ if __name__ == '__main__':
         tc = Client()
         lview = tc.load_balanced_view() # default load-balanced view
 
-    root_folder = "dx8"
-    run_halfrings = True
-    run_surveydiff = True
-    run_chdiff = True
-    compute_union_mask = False
 
     if run_halfrings:
         print "HALFRINGS"

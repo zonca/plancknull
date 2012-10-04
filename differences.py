@@ -176,8 +176,8 @@ def smooth_combine(maps_and_weights, variance_maps_and_weights, fwhm=np.radians(
              metadata["map_p2p_%s" % comp] = m.ptp()
              metadata["map_std_%s" % comp] = m.std()
     else:
-        metadata["map_p2p"] = smoothed_map.ptp()
-        metadata["map_std"] = smoothed_map.std()
+        metadata["map_p2p_I"] = smoothed_map.ptp()
+        metadata["map_std_I"] = smoothed_map.std()
 
     with open(os.path.join(root_folder, base_filename + "_map.json"), 'w') as f:
         json.dump(metadata, f)

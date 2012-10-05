@@ -134,6 +134,7 @@ def smooth_combine(maps_and_weights, variance_maps_and_weights, fwhm=np.radians(
 
     smoothed_map = hp.smoothing(combined_map, fwhm=fwhm)
 
+    log.debug("Smooth Variance")
     if is_IQU:
         smoothed_variance_map = [utils.smooth_variance_map(var, fwhm=fwhm) for var in combined_variance_map]
         for comp,m,var in zip("IQU", smoothed_map, smoothed_variance_map):

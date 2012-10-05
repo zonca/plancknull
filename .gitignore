@@ -2,8 +2,12 @@
 dx9null/images/chdiff
 dx9null/images/halfrings
 dx9null/images/surveydiff
+dx9null/images/spectra
 dx9null/*html
+*png
 dx9
+*json
+*fits
 *swp
 
 # Packages

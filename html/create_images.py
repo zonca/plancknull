@@ -8,7 +8,7 @@ sys.path.append("..")
 
 import healpy as hp
 
-root_folder = "../ddx92"
+root_folder = "../dx8_10deg"
 out_folder = "../dx9null/images"
 
 try:
@@ -71,6 +71,6 @@ for fold in ["halfrings", "surveydiff", "chdiff"]:
     except:
         pass
 
-for f in glob(os.path.join(root_folder, "*", "*map.json")):
+for f in glob(os.path.join(root_folder, "*", "*SS5-SS4*map.json")):
     print f
     plot_figure(json.load(open(f)))

@@ -285,12 +285,12 @@ def surveydiff(freq, ch, survlist=[1,2,3,4,5], pol='I', root_folder="out/", smoo
     log.debug("Metadata")
 
     metadata = dict( 
-        file_type="surveydiff_%s" % (reader.type_of_channel_set(ch),),
         channel=chtag,
         )
 
     combs = list(itertools.combinations(survlist, 2))
     for comb in combs:
+        metadata["file_type"]="surveydiff_%s" % (reader.type_of_channel_set(ch),)
         # in case of even-odd, swap to odd-even. Do the same for
         # combinations like e.g. SS3-SS1 (-> SS1-SS3)
         if (comb[1] % 2 != 0 and comb[0] % 2 == 0) or (comb[1] < comb[0]):
@@ -349,7 +349,6 @@ def chdiff(freq, chlist, surv, pol='I', smooth_combine_config=None, root_folder=
     ps_mask, gal_mask = mapreader.read_masks(freq)
 
     metadata = dict( 
-        file_type="chdiff",
         survey=surv
         )
 
@@ -357,6 +356,7 @@ def chdiff(freq, chlist, surv, pol='I', smooth_combine_config=None, root_folder=
     for comb in combs:
         metadata["title"]="Channel difference %s-%s SS%s" % (comb[0], comb[1], surv)
         metadata["channel"] = comb
+        metadata["file_type"] = "chdiff"
         smooth_combine(
                 [ (maps[comb[0]],  1),
                   (maps[comb[1]], -1) ],

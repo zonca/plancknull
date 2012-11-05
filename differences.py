@@ -273,8 +273,9 @@ def surveydiff(freq, ch, survlist=[1,2,3,4,5], pol='I', root_folder="out/", smoo
     maps = dict([(surv, mapreader(freq, surv, ch, halfring=0, pol=pol, bp_corr=bp_corr)) for surv in survlist])
 
     log.debug("Read variance")
-    var_pol = 'A' if len(pol) == 1 else 'ADF' # for I only read sigma_II, else read sigma_II, sigma_QQ, sigma_UU
-    variance_maps = dict([(surv, mapreader(freq, surv, ch, halfring=0, pol=var_pol, bp_corr=False)) for surv in survlist])
+    #var_pol = 'A' if len(pol) == 1 else 'ADF' # for I only read sigma_II, else read sigma_II, sigma_QQ, sigma_UU
+    #variance_maps = dict([(surv, mapreader(freq, surv, ch, halfring=0, pol=var_pol, bp_corr=False)) for surv in survlist])
+    variance_maps = dict([(surv, hp.ma(np.ones_like(maps[1]))) for surv in survlist])
     for var_m in variance_maps.values():
         assert np.all(var_m >= 0)
 

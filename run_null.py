@@ -64,11 +64,11 @@ if config.getboolean("run", "run_halfrings"):
 if config.getboolean("run", "run_surveydiff"):
     print "SURVDIFF"
     survs = [1,2,3,4,5]
-    freqs = [30, 44, 70]
-    for bp_corr in [False, True]:
+    freqs = [70]
+    for bp_corr in [False]:
         for freq in freqs:
             chtags = [""]
-            #chtags = []; log.warning("Disabled full freq")
+            chtags = []; log.warning("Disabled full freq")
             if freq == 70:
                 chtags += ["18_23", "19_22", "20_21"]
             #log.warning("Disabled quadruplets")

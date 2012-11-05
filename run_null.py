@@ -4,6 +4,7 @@ import os
 from differences import halfrings, surveydiff, chdiff 
 import reader
 from ConfigParser import SafeConfigParser, NoOptionError
+from exceptions import IOError
 
 import utils
 import sys
@@ -58,21 +59,22 @@ if config.getboolean("run", "run_halfrings"):
                                   smooth_combine_config=smooth_combine_config,
                                   root_folder=root_folder,log_to_file=False,
                                  mapreader=mapreader)
-                    except NoOptionError as e:
+                    except (NoOptionError, IOError) as e:
                         log.error("SKIP TEST: " + e.message)
 
 if config.getboolean("run", "run_surveydiff"):
     print "SURVDIFF"
-    survs = [1,2,3,4,5]
-    freqs = [70]
+    #survs = [1,2,3,4,5]
+    survs = [1,2]
+    freqs = [30, 44, 70]
     for bp_corr in [False]:
         for freq in freqs:
             chtags = [""]
-            chtags = []; log.warning("Disabled full freq")
-            if freq == 70:
-                chtags += ["18_23", "19_22", "20_21"]
-            #log.warning("Disabled quadruplets")
-            chtags += utils.chlist(freq)
+            #chtags = []; log.warning("Disabled full freq")
+            #if freq == 70:
+            #    chtags += ["18_23", "19_22", "20_21"]
+            log.warning("Disabled quadruplets")
+            #chtags += utils.chlist(freq)
             for chtag in chtags:
                 if bp_corr and chtag: # no corr for single ch
                     continue

@@ -228,12 +228,11 @@ def halfrings(freq, ch, surv, pol='I', smooth_combine_config=None, root_folder="
         title="Halfring difference survey %s ch %s" % (str(surv), chtag),
         )
     log.info("Call smooth_combine")
-    var_pol = 'A' if len(pol) == 1 else 'ADF' # for I only read sigma_II, else read sigma_II, sigma_QQ, sigma_UU
     smooth_combine(
             [(mapreader(freq, surv, ch, halfring=1, pol=pol), 1), 
              (mapreader(freq, surv, ch, halfring=2, pol=pol), -1)],
-            [(mapreader(freq, surv, ch, halfring=1, pol=var_pol), 1.), 
-             (mapreader(freq, surv, ch, halfring=2, pol=var_pol), 1.)],
+            [(hp.ma(np.ones((3, hp.nside2npix(mapreader.nside)))), 1),
+             (hp.ma(np.ones((3, hp.nside2npix(mapreader.nside)))), 1)],
               base_filename=base_filename,
               metadata=metadata,
               root_folder=root_folder,

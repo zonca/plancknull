@@ -173,5 +173,10 @@ class DXReader(BaseMapReader):
             out = output_map[0]
 
         if self.nside:
-            out = hp.ud_grade(out, self.nside)
+            log.info("Downgrading to nside %d" % self.nside)
+            power = None
+            if pol in "ADF":
+                log.info("Downgrading a covariance matrix")
+                power = 2
+            out = hp.ud_grade(out, self.nside,power=power)
         return out

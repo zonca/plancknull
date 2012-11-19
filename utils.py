@@ -1,15 +1,21 @@
 import numpy as np
 import healpy as hp
 import logging as log
+import exceptions
 
 HORNS = {30:[27,28], 44:[24,25,26], 70:list(range(18,23+1))}
 
 def chlist(freq):
-    horns = HORNS[freq]
-    chs = []
-    for horn in horns:
-        chs += ["LFI%dM" % horn, "LFI%dS" % horn]
-    return chs
+    try:
+        from planck.Planck import Planck
+        pl = Planck()
+        return [ch.tag for ch in pl.f[freq].ch]
+    except exceptions.ImportError:
+        horns = HORNS[freq]
+        chs = []
+        for horn in horns:
+            chs += ["LFI%dM" % horn, "LFI%dS" % horn]
+        return chs
 
 def get_chisq(m, var):
     return np.mean(m**2/var)

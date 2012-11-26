@@ -1,6 +1,7 @@
 import os
 import exceptions
 import matplotlib.pyplot as plt
+import matplotlib
 import json
 from glob import glob
 import sys
@@ -8,7 +9,8 @@ sys.path.append("..")
 
 import healpy as hp
 
-root_folder = "../dx8_10deg"
+root_folder = "../ddx9h"
+root_folder = "../ddx92_10deg"
 out_folder = "../dx9null/images"
 
 try:
@@ -31,7 +33,7 @@ def plot_figure(metadata):
         is_single_channel = isinstance(metadata["channel"], basestring) and len(metadata["channel"])==6
         if is_single_channel:
             if int(metadata["channel"][3:5]) < 24: # 70GHz
-                plot_range = 100
+                plot_range = 20
         test_type = metadata["base_file_name"].split("/")[0]
         if isinstance(metadata["channel"], list):
             metadata["channel"] = "_".join(metadata["channel"])
@@ -44,10 +46,13 @@ def plot_figure(metadata):
                             plot_range = 100
                         else:
                             plot_range = 30
-                    if int(metadata["channel"]) >= 545 and comp in "QU":
-                        plot_range = 1e6
+                    if int(metadata["channel"]) >= 545:
+                        if comp in "QU":
+                            plot_range = 1e6
+                        else:
+                            plot_range = 500
                     if int(metadata["channel"]) >= 857:
-                        plot_range = 1e4
+                        plot_range = 1e5
                         if comp in "QU":
                             plot_range = 1e6
                     if test_type == "surveydiff" and int(metadata["channel"]) >= 545 and comp == "Q":
@@ -56,12 +61,14 @@ def plot_figure(metadata):
                 pass
 
         fig = plt.figure(figsize=(9, 6), dpi=100)
-        hp.mollview(m * 1e6, min=-plot_range, max=plot_range, unit="muK", title=metadata["title"] + " %s" % comp, xsize=900, hold=True)
+        matplotlib.rcParams.update({'font.size': 14})
+        hp.mollview(m * 1e6, min=-plot_range, max=plot_range, unit="uK", title=metadata["title"] + " %s" % comp, xsize=900, hold=True)
         plt.savefig(os.path.join(out_folder, metadata["file_name"].replace(".fits", "_%s.jpg" % comp)), dpi=100)
         plt.close()
         fig = plt.figure(figsize=(9, 6), dpi=20)
         fig.add_axes([0.01, 0.01, 0.98, 0.98])
-        hp.mollview(m * 1e6, min=-plot_range, max=plot_range, cbar=False, title="", xsize=180, hold=True)
+        matplotlib.rcParams.update({'font.size': 30})
+        hp.mollview(m * 1e6, min=-plot_range, max=plot_range, cbar=True, title="", xsize=180, hold=True)
         plt.savefig(os.path.join(out_folder, metadata["file_name"].replace(".fits", "_%s_thumb.jpg" % comp)), dpi=20)
         plt.close()
 
@@ -71,6 +78,6 @@ for fold in ["halfrings", "surveydiff", "chdiff"]:
     except:
         pass
 
-for f in glob(os.path.join(root_folder, "*", "*SS5-SS4*map.json")):
+for f in sorted(glob(os.path.join(root_folder, "*", "*" + sys.argv[1] + "*map.json"))):
     print f
     plot_figure(json.load(open(f)))

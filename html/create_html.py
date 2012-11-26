@@ -12,9 +12,9 @@ cm = plt.get_cmap('jet')
 num_colors = 11
 colors = [cm(float(i)/num_colors) for i in range(num_colors) ]
 
-root_folder = "../dx8_10deg/"
+root_folder = "../ddx92_10deg/"
 out_folder = "../dx9null/"
-release_name = "DX8 10deg"
+release_name = "LFI Delta DX9 / HFI DX9 10deg"
 
 try:
     os.mkdir(out_folder + "images/spectra")
@@ -41,19 +41,23 @@ def chlist(freq):
 
 print "MENU"
 
-freqs = [30,44,70]#, 100, 143, 217, 353, 545, 857]
+freqs = [30, 44, 70, 100, 143, 217, 353, 545, 857]
+freqspol = [30, 44, 70, 100, 143, 217, 353]
 
 menu = [{"title":"Halfrings", "file":"index.html",
 "links" : [("%d" % freq, "%dGHz" % freq) for freq in freqs]}]
 
 for comp in "IQU":
     menu_item = {"title":"Surv Diff %s" % comp, "file":"surveydiff_%s.html" % comp}
-    menu_item["links"] = [("%d_%s" % (freq, comp), "%dGHz %s" % (freq, comp))  for freq in freqs]
+    if comp == "I":
+        menu_item["links"] = [("%d_%s" % (freq, comp), "%dGHz %s" % (freq, comp))  for freq in freqs]
+    else:
+        menu_item["links"] = [("%d_%s" % (freq, comp), "%dGHz %s" % (freq, comp))  for freq in freqspol]
     menu.append(menu_item)
 
-#menu_item = {"title":"Horn Diff", "file":"horndiff.html"}
-#menu_item["links"] = [("%d_SS1" % freq, "%dGHz" % freq) for freq in [30, 44, 70]]
-#menu.append(menu_item)
+menu_item = {"title":"Horn Diff", "file":"horndiff.html"}
+menu_item["links"] = [("%d_SS1" % freq, "%dGHz" % freq) for freq in [30, 44, 70]]
+menu.append(menu_item)
 
 menu_item = {"title":"Spectra", "file":"spectra.html"}
 menu_item["links"] = [("%d_%s" % (freq, comp), "%dGHz %s" % (freq, comp)) for comp in "TE" for freq in freqs]
@@ -71,8 +75,8 @@ table_list = []
 summary_table = {"labels":[], "rows":[], "labels_done":False}
 for freq in freqs:
     chtags = [""]
-    #if freq == 70:
-    #    chtags += ["18_23", "19_22", "20_21"]
+    if freq == 70:
+        chtags += ["18_23", "19_22", "20_21"]
     for ch in chtags:
         if ch:
             chtag = ch
@@ -85,18 +89,22 @@ for freq in freqs:
             row = {"images":[]}
             f=os.path.join(root_folder, "halfrings", "%s_SS%s_map.json" % (chtag, str(surv)))
             print(f)
-            metadata = json.load(open(f))
+            with open(f) as openfile:
+                metadata = json.load(openfile)
             for comp in "IQU":
-                row["images"].append({ "title":metadata["title"] + " %s" % comp, 
-                    "file_name" : metadata["base_file_name"] + "_map_%s" % comp,
-                    "tag" : metadata["base_file_name"].replace("/","_") + "_%s" % comp,
-                    })
-                if not summary_table["labels_done"]:
-                    summary_table["labels"].append(comp)
-                try:
-                    summary_row["numslinks"].append(("%.2f" % (metadata["map_chi2_%s" % comp]), row["images"][-1]["file_name"]))
-                except exceptions.KeyError:
-                    summary_row["numslinks"].append(("%.2f" % (metadata["map_chi2"]),row["images"][-1]["file_name"] ))
+                if comp in "QU" and freq > 500:
+                    pass
+                else:
+                    row["images"].append({ "title":metadata["title"] + " %s" % comp, 
+                        "file_name" : metadata["base_file_name"] + "_map_%s" % comp,
+                        "tag" : metadata["base_file_name"].replace("/","_") + "_%s" % comp,
+                        })
+                    if not summary_table["labels_done"]:
+                        summary_table["labels"].append(comp)
+                    try:
+                        summary_row["numslinks"].append(("%.2f" % (metadata["map_chi2_%s" % comp]), row["images"][-1]["file_name"]))
+                    except exceptions.KeyError:
+                        summary_row["numslinks"].append(("%.2f" % (metadata["map_chi2"]),row["images"][-1]["file_name"] ))
             table["rows"].append(row)
             table_list.append(table)
             summary_table["labels_done"] = True
@@ -126,7 +134,11 @@ survs = [1,2,3,4,5]
 for comp in "IQU":
     table_list = []
     summary_table = {"labels":[], "rows":[], "labels_done":False}
-    for freq in freqs:
+    if comp == "I":
+        allfreq = freqs
+    else:
+        allfreq = freqspol
+    for freq in allfreq:
         chtags = [""]
         if freq == 70:
             chtags += ["18_23", "19_22", "20_21"]
@@ -136,7 +148,7 @@ for comp in "IQU":
             if ch or freq>70:
                 bp_corrs = [False]
             else:
-                bp_corrs = [False, True]
+                bp_corrs = [False]
             for bp_corr in bp_corrs:
                 if ch and ch.find("_") < 0 and comp in "QU":
                     pass
@@ -161,7 +173,8 @@ for comp in "IQU":
                                     if not summary_table["labels_done"]:
                                         summary_table["labels"].append("SS%d-SS%d" % comb)
                                     metadata_filename = os.path.join(root_folder, "surveydiff", "%s_SS%d-SS%d%s_map.json" % (chtag, comb[0], comb[1], bp_tag[bp_corr]))
-                                    metadata=json.load(open(metadata_filename))
+                                    with open(metadata_filename) as metadata_file:
+                                        metadata=json.load(metadata_file)
 
                                     row["images"].append({"file_name":metadata["base_file_name"] + "_map_%s" % comp, "title":metadata["title"] + " %s" % comp, 
                             "tag" : metadata["base_file_name"].replace("/","_")+ "_%s" % comp,
@@ -197,11 +210,14 @@ for comp in "TE":
     tag = comp + comp
     summary_table = {"labels":[], "rows":[], "labels_done":False}
     for freq in freqs:
+       if freq >= 545 and comp == "E":
+            pass
+       else:
         chtags = [""]
         if freq == 70:
             chtags += ["18_23", "19_22", "20_21"]
-        #if freq < 100:
-        #    chtags += chlist(freq)
+        if freq < 100:
+            chtags += chlist(freq)
         for ch in chtags:
             if ch or freq>70:
                 bp_corrs = [False]
@@ -231,8 +247,12 @@ for comp in "TE":
                             else:
                                 comb = swap_surv((surv, surv2))
                                 metadata_filename = os.path.join(root_folder, "surveydiff", "%s_SS%d-SS%d%s_cl.json" % (chtag, comb[0], comb[1], bp_tag[bp_corr]))
-                                metadata=json.load(open(metadata_filename))
-                                spec = hp.read_cl(root_folder + metadata["file_name"])[cl_comp[comp]]*1e12
+                                with open(metadata_filename) as metadata_file:
+                                    metadata=json.load(metadata_file)
+                                spec = hp.read_cl(root_folder + metadata["file_name"])
+                                if isinstance(spec, list):
+                                    spec = spec[cl_comp[comp]]
+                                spec *= 1e12
                                 binspec, binspecerr = bin(spec, 5)
                                 ell, eller = bin(np.arange(len(spec)), 5)
                                 ell = np.arange(len(spec))
@@ -243,7 +263,10 @@ for comp in "TE":
                     f=os.path.join(root_folder, "halfrings", "%s_SS%s_cl.json" % (chtag, "nominal"))
                     try:
                         metadata=json.load(open(f))
-                        spec = hp.read_cl(root_folder + metadata["file_name"])[cl_comp[comp]]*1e12
+                        spec = hp.read_cl(root_folder + metadata["file_name"])
+                        if isinstance(spec, list):
+                            spec = spec[cl_comp[comp]]
+                        spec *= 1e12
                         binspec, binspecerr = bin(spec, 5)
                         ell, eller = bin(np.arange(len(spec)), 5)
                         ell = np.arange(len(spec))

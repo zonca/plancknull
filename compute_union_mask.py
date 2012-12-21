@@ -1,22 +1,20 @@
-from glob import glob
 import utils
-import os
 import reader
 import sys
 
 import healpy as hp
 mapreader = reader.DXReader(sys.argv[1])
+from planck.Planck import Planck
+pl = Planck()
 
 print "UNIONMASK"
-nside = 1024
+nside = 2048
 survs = [1,2,3,4,5]
-freqs = [30, 44, 70]
+freqs = pl.inst["HFI"].f.keys()
+
 for freq in freqs:
-    mask = utils.read_mask(
-        glob(os.path.join(os.environ["DDX9_LFI"], "MASKs",
-                      'destripingmask_%d.fits' % freq))[-1]
-                     , nside=nside )
-    mask |= utils.read_mask("/global/project/projectdirs/planck/user/zonca/masks/wmap_polarization_analysis_mask_r9_7yr_v4.fits", nside=nside)
+    mask = utils.read_mask("/global/homes/z/zonca/p/masks/mask_4.fits", nside)
+    #mask |= utils.read_mask("/global/project/projectdirs/planck/user/zonca/masks/wmap_polarization_analysis_mask_r9_7yr_v4.fits", nside=nside)
     chtags = [""]
     if freq == 70:
         chtags += ["18_23", "19_22", "20_21"]

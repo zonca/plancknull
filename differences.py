@@ -41,7 +41,7 @@ def combine_maps(maps_and_weights):
 
     return combined_map
 
-def smooth_combine(maps_and_weights, variance_maps_and_weights, fwhm=np.radians(2.0), degraded_nside=32, spectra=False, smooth_mask=False, spectra_mask=False, base_filename="out", root_folder=".", metadata={}):
+def smooth_combine(maps_and_weights, variance_maps_and_weights=None, fwhm=np.radians(2.0), degraded_nside=32, spectra=False, smooth_mask=False, spectra_mask=False, base_filename="out", root_folder=".", metadata={}, chi2=False):
     """Combine, smooth, take-spectra, write metadata
 
     The maps (I or IQU) are first combined with their own weights, then smoothed and degraded.
@@ -81,10 +81,13 @@ def smooth_combine(maps_and_weights, variance_maps_and_weights, fwhm=np.radians(
         assert hp.isnpixok(len(maps_and_weights[0][0])), "Input maps must have either 1 or 3 components"
 
     combined_map = combine_maps(maps_and_weights)
-    combined_variance_map = combine_maps(variance_maps_and_weights)
+    all_maps = combined_map
+    if not variance_maps_and_weights is None:
+        combined_variance_map = combine_maps(variance_maps_and_weights)
+        all_maps += combined_variance_map
 
     # apply mask
-    for m in combined_map + combined_variance_map:
+    for m in all_maps:
         m.mask |= smooth_mask
 
     monopole_I, dipole_I = hp.fit_dipole(combined_map[0], gal_cut=30)
@@ -118,12 +121,13 @@ def smooth_combine(maps_and_weights, variance_maps_and_weights, fwhm=np.radians(
             log.error("Write IQU Cls to fits requires more recent version of healpy")
         del cl
 
-        # expected cl from white noise
-        # /4. to have same normalization of cl
-        metadata["whitenoise_cl"] = utils.get_whitenoise_cl(combined_variance_map[0]/4., mask=combined_map[0].mask) / sky_frac
-        if is_IQU:
-            # /2. is the mean, /4. is the half difference in power
-            metadata["whitenoise_cl_P"] = utils.get_whitenoise_cl((combined_variance_map[1] + combined_variance_map[2])/2./4., mask=combined_map[1].mask | combined_map[2].mask) / sky_frac 
+        if not variance_maps_and_weights is None:
+            # expected cl from white noise
+            # /4. to have same normalization of cl
+            metadata["whitenoise_cl"] = utils.get_whitenoise_cl(combined_variance_map[0]/4., mask=combined_map[0].mask) / sky_frac
+            if is_IQU:
+                # /2. is the mean, /4. is the half difference in power
+                metadata["whitenoise_cl_P"] = utils.get_whitenoise_cl((combined_variance_map[1] + combined_variance_map[2])/2./4., mask=combined_map[1].mask | combined_map[2].mask) / sky_frac 
 
         # restore masks
         for m, mask in zip(combined_map, orig_mask):
@@ -134,19 +138,20 @@ def smooth_combine(maps_and_weights, variance_maps_and_weights, fwhm=np.radians(
 
     smoothed_map = hp.smoothing(combined_map, fwhm=fwhm)
 
-    log.debug("Smooth Variance")
-    if is_IQU:
-        smoothed_variance_map = [utils.smooth_variance_map(var, fwhm=fwhm) for var in combined_variance_map]
-        for comp,m,var in zip("IQU", smoothed_map, smoothed_variance_map):
-             metadata["map_chi2_%s" % comp] = np.mean(m**2 / var) 
-        for comp,m,var in zip("IQU", combined_map, combined_variance_map):
-             metadata["map_unsm_chi2_%s" % comp] = np.mean(m**2 / var) 
-    else:
-        smoothed_variance_map = utils.smooth_variance_map(combined_variance_map[0], fwhm=fwhm)
-        metadata["map_chi2"] = np.mean(smoothed_map**2 / smoothed_variance_map) 
-        metadata["map_unsm_chi2"] = np.mean(combined_map[0]**2 / combined_variance_map[0]) 
+    if not variance_maps_and_weights is None:
+        log.debug("Smooth Variance")
+        if is_IQU:
+            smoothed_variance_map = [utils.smooth_variance_map(var, fwhm=fwhm) for var in combined_variance_map]
+            for comp,m,var in zip("IQU", smoothed_map, smoothed_variance_map):
+                 metadata["map_chi2_%s" % comp] = np.mean(m**2 / var) 
+            for comp,m,var in zip("IQU", combined_map, combined_variance_map):
+                 metadata["map_unsm_chi2_%s" % comp] = np.mean(m**2 / var) 
+        else:
+            smoothed_variance_map = utils.smooth_variance_map(combined_variance_map[0], fwhm=fwhm)
+            metadata["map_chi2"] = np.mean(smoothed_map**2 / smoothed_variance_map) 
+            metadata["map_unsm_chi2"] = np.mean(combined_map[0]**2 / combined_variance_map[0]) 
 
-    del smoothed_variance_map
+        del smoothed_variance_map
     # removed downgrade of variance
     # smoothed_variance_map = hp.ud_grade(smoothed_variance_map, degraded_nside, power=2)
 
@@ -228,12 +233,15 @@ def halfrings(freq, ch, surv, pol='I', smooth_combine_config=None, root_folder="
         title="Halfring difference survey %s ch %s" % (str(surv), chtag),
         )
     log.info("Call smooth_combine")
-    var_pol = 'A' if len(pol) == 1 else 'ADF' # for I only read sigma_II, else read sigma_II, sigma_QQ, sigma_UU
+    variance_maps_and_weights = None
+    if smooth_combine_config["chi2"]:
+        var_pol = 'A' if len(pol) == 1 else 'ADF' # for I only read sigma_II, else read sigma_II, sigma_QQ, sigma_UU
+        variance_maps_and_weights = [(mapreader(freq, surv, ch, halfring=1, pol=var_pol), 1.), 
+                 (mapreader(freq, surv, ch, halfring=2, pol=var_pol), 1.)]
     smooth_combine(
             [(mapreader(freq, surv, ch, halfring=1, pol=pol), 1), 
              (mapreader(freq, surv, ch, halfring=2, pol=pol), -1)],
-            [(mapreader(freq, surv, ch, halfring=1, pol=var_pol), 1.), 
-             (mapreader(freq, surv, ch, halfring=2, pol=var_pol), 1.)],
+             variance_maps_and_weights,
               base_filename=base_filename,
               metadata=metadata,
               root_folder=root_folder,
@@ -272,11 +280,12 @@ def surveydiff(freq, ch, survlist=[1,2,3,4,5], pol='I', root_folder="out/", smoo
     # read all maps
     maps = dict([(surv, mapreader(freq, surv, ch, halfring=0, pol=pol, bp_corr=bp_corr)) for surv in survlist])
 
-    log.debug("Read variance")
-    var_pol = 'A' if len(pol) == 1 else 'ADF' # for I only read sigma_II, else read sigma_II, sigma_QQ, sigma_UU
-    variance_maps = dict([(surv, mapreader(freq, surv, ch, halfring=0, pol=var_pol, bp_corr=False)) for surv in survlist])
-    for var_m in variance_maps.values():
-        assert np.all(var_m >= 0)
+    if smooth_combine_config["chi2"]:
+        log.debug("Read variance")
+        var_pol = 'A' if len(pol) == 1 else 'ADF' # for I only read sigma_II, else read sigma_II, sigma_QQ, sigma_UU
+        variance_maps = dict([(surv, mapreader(freq, surv, ch, halfring=0, pol=var_pol, bp_corr=False)) for surv in survlist])
+        for var_m in variance_maps.values():
+            assert np.all(var_m >= 0)
 
     log.debug("All maps read")
 
@@ -288,6 +297,7 @@ def surveydiff(freq, ch, survlist=[1,2,3,4,5], pol='I', root_folder="out/", smoo
         channel=chtag,
         )
 
+    variance_maps_and_weights = None
     combs = list(itertools.combinations(survlist, 2))
     for comb in combs:
         metadata["file_type"]="surveydiff_%s" % (reader.type_of_channel_set(ch),)
@@ -302,12 +312,14 @@ def surveydiff(freq, ch, survlist=[1,2,3,4,5], pol='I', root_folder="out/", smoo
             metadata["title"] += " BPCORR"
             base_filename += "_bpcorr"
 
+        if smooth_combine_config["chi2"]:
+            variance_maps_and_weights = [ (variance_maps[comb[0]], 1),
+                  (variance_maps[comb[1]], 1) ]
         log.debug("Launching smooth_combine")
         smooth_combine(
                 [ (maps[comb[0]],  1),
                   (maps[comb[1]], -1) ],
-                [ (variance_maps[comb[0]], 1),
-                  (variance_maps[comb[1]], 1) ],
+                variance_maps_and_weights, 
                 base_filename=base_filename,
                 root_folder=root_folder,
                 metadata=dict(metadata.items() + {"surveys": comb}.items()),
@@ -340,11 +352,12 @@ def chdiff(freq, chlist, surv, pol='I', smooth_combine_config=None, root_folder=
     # read all maps
     maps = dict([(ch, mapreader(freq, surv, ch, halfring=0, pol=pol)) for ch in chlist])
 
-    log.debug("Read variance")
-    var_pol = 'A' if len(pol) == 1 else 'ADF' # for I only read sigma_II, else read sigma_II, sigma_QQ, sigma_UU
-    variance_maps = dict([(ch, mapreader(freq, surv, ch, halfring=0, pol=var_pol, bp_corr=False)) for ch in chlist])
-    for var_m in variance_maps.values():
-        assert np.all(var_m >= 0)
+    if smooth_combine_config["chi2"]:
+        log.debug("Read variance")
+        var_pol = 'A' if len(pol) == 1 else 'ADF' # for I only read sigma_II, else read sigma_II, sigma_QQ, sigma_UU
+        variance_maps = dict([(ch, mapreader(freq, surv, ch, halfring=0, pol=var_pol, bp_corr=False)) for ch in chlist])
+        for var_m in variance_maps.values():
+            assert np.all(var_m >= 0)
 
     ps_mask, gal_mask = mapreader.read_masks(freq)
 
@@ -357,11 +370,13 @@ def chdiff(freq, chlist, surv, pol='I', smooth_combine_config=None, root_folder=
         metadata["title"]="Channel difference %s-%s SS%s" % (comb[0], comb[1], surv)
         metadata["channel"] = comb
         metadata["file_type"] = "chdiff"
+        if smooth_combine_config["chi2"]:
+           variance_maps_and_weights = [ (variance_maps[comb[0]], 1),
+                  (variance_maps[comb[1]], 1) ]
         smooth_combine(
                 [ (maps[comb[0]],  1),
                   (maps[comb[1]], -1) ],
-                [ (variance_maps[comb[0]], 1),
-                  (variance_maps[comb[1]], 1) ],
+                variance_maps_and_weights,
                 base_filename=os.path.join("chdiff", "%s-%s_SS%s" % (comb[0],   comb[1], surv)),
                 root_folder=root_folder,
                 metadata=metadata,

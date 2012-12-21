@@ -4,6 +4,8 @@ import os
 from differences import halfrings, surveydiff, chdiff 
 import reader
 from ConfigParser import SafeConfigParser, NoOptionError
+import exceptions
+import json
 
 import utils
 import sys
@@ -29,42 +31,46 @@ log.root.level = log.DEBUG
 
 # create map reader
 mapreader = reader.DXReader(config.get("run", "reader_conf"), nside=config.getint("smooth_combine", "nside"))
-smooth_combine_config = dict(fwhm=np.radians(config.getfloat("smooth_combine", "smoothing")), degraded_nside=config.getint("smooth_combine", "degraded_nside"), spectra=True)
+smooth_combine_config = dict(fwhm=np.radians(config.getfloat("smooth_combine", "smoothing")), degraded_nside=config.getint("smooth_combine", "degraded_nside"), spectra=config.getboolean("smooth_combine", "spectra"), chi2=config.getboolean("smooth_combine", "chi2"))
 
 if paral:
     tasks = []
     tc = Client()
     lview = tc.load_balanced_view() # default load-balanced view
 
+# get list of frequencies
+freqs = json.loads(config.get("run", "frequency"))
+
 if config.getboolean("run", "run_halfrings"):
     print "HALFRINGS"
     survs = ["nominal", "full"]
-    freqs = [30, 44, 70]
     for freq in freqs:
         chtags = [""]
+        pol = "IQU"
         if freq == 70:
             chtags += ["18_23", "19_22", "20_21"]
+        if freq >= 545:
+            pol = "I"
         for chtag in chtags:
             for surv in survs:
                 if paral:
                     tasks.append(lview.apply_async(halfrings,freq, chtag,
-                                                   surv, pol='IQU',
+                                                   surv, pol=pol,
                                                    smooth_combine_config=smooth_combine_config,
                                                    root_folder=root_folder,log_to_file=True,
                                                    mapreader=mapreader))
                 else:
                     try:
-                        halfrings(freq, chtag, surv, pol='IQU',
+                        halfrings(freq, chtag, surv, pol=pol,
                                   smooth_combine_config=smooth_combine_config,
                                   root_folder=root_folder,log_to_file=False,
                                  mapreader=mapreader)
-                    except NoOptionError as e:
+                    except (NoOptionError, exceptions.IOError) as e:
                         log.error("SKIP TEST: " + e.message)
 
 if config.getboolean("run", "run_surveydiff"):
     print "SURVDIFF"
     survs = [1,2,3,4,5]
-    freqs = [30, 44, 70]
     for bp_corr in [False, True]:
         for freq in freqs:
             chtags = [""]
@@ -76,7 +82,7 @@ if config.getboolean("run", "run_surveydiff"):
             for chtag in chtags:
                 if bp_corr and chtag: # no corr for single ch
                     continue
-                if chtag and chtag.find("_") < 0:
+                if (freq >= 545) or (chtag and chtag.find("_") < 0):
                     pol='I'
                 else:
                     pol="IQU"
@@ -93,13 +99,12 @@ if config.getboolean("run", "run_surveydiff"):
                                    smooth_combine_config=smooth_combine_config,
                                    root_folder=root_folder,log_to_file=False,
                                    bp_corr=bp_corr, mapreader=mapreader)
-                    except NoOptionError as e:
+                    except (NoOptionError, exceptions.IOError) as e:
                         log.error("SKIP TEST: " + e.message)
 
 if config.getboolean("run", "run_chdiff"):
     print "CHDIFF"
     survs = [1,2,3,4,5]
-    freqs = [30, 44, 70]
         
     for freq in freqs:
         for surv in survs:
@@ -119,9 +124,9 @@ if config.getboolean("run", "run_chdiff"):
                           root_folder=root_folder,
                           log_to_file=False,
                           mapreader=mapreader)
-                except NoOptionError as e:
+                except (NoOptionError, exceptions.IOError) as e:
                     log.error("SKIP TEST: " + e.message)
 
 if paral:
     print("Wait for %d tasks to complete" % len(tasks))
-    tc.wait(tasks)
+    #tc.wait(tasks)

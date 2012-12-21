@@ -105,7 +105,9 @@ class DXReader(BaseMapReader):
         is_halfring = halfring != 0
 
         # stokes component
-        stokes = stokes_I if channel_type in ["channel", "horn"] else stokes_IQU
+        stokes = stokes_IQU
+        if (channel_type in ["channel", "horn"]) or freq >= 545:
+            stokes = stokes_I
         if isinstance(pol, str):
             components = [stokes.index(p) for p in pol]
             if len(components) == 1:

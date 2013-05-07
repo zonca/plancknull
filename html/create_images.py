@@ -10,7 +10,7 @@ sys.path.append("..")
 import healpy as hp
 
 root_folder = "../ddx9h"
-root_folder = "../ddx92_10deg"
+root_folder = "../ecn512s"
 out_folder = "../dx9null/images"
 
 try:
@@ -63,13 +63,13 @@ def plot_figure(metadata):
         fig = plt.figure(figsize=(9, 6), dpi=100)
         matplotlib.rcParams.update({'font.size': 14})
         hp.mollview(m * 1e6, min=-plot_range, max=plot_range, unit="uK", title=metadata["title"] + " %s" % comp, xsize=900, hold=True)
-        plt.savefig(os.path.join(out_folder, metadata["file_name"].replace(".fits", "_%s.jpg" % comp)), dpi=100)
+        plt.savefig(os.path.join(out_folder, metadata["file_name"].replace(".fits", "_%s.png" % comp)), dpi=100)
         plt.close()
         fig = plt.figure(figsize=(9, 6), dpi=20)
         fig.add_axes([0.01, 0.01, 0.98, 0.98])
         matplotlib.rcParams.update({'font.size': 30})
         hp.mollview(m * 1e6, min=-plot_range, max=plot_range, cbar=True, title="", xsize=180, hold=True)
-        plt.savefig(os.path.join(out_folder, metadata["file_name"].replace(".fits", "_%s_thumb.jpg" % comp)), dpi=20)
+        plt.savefig(os.path.join(out_folder, metadata["file_name"].replace(".fits", "_%s_thumb.png" % comp)), dpi=20)
         plt.close()
 
 for fold in ["halfrings", "surveydiff", "chdiff"]:
@@ -78,6 +78,6 @@ for fold in ["halfrings", "surveydiff", "chdiff"]:
     except:
         pass
 
-for f in sorted(glob(os.path.join(root_folder, "*", "*" + sys.argv[1] + "*map.json"))):
+for f in sorted(glob(os.path.join(root_folder, "*", "*"  + "*map.json"))):
     print f
     plot_figure(json.load(open(f)))

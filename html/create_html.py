@@ -12,9 +12,9 @@ cm = plt.get_cmap('jet')
 num_colors = 11
 colors = [cm(float(i)/num_colors) for i in range(num_colors) ]
 
-root_folder = "../ddx92_10deg/"
+root_folder = "../ecn512s/"
 out_folder = "../dx9null/"
-release_name = "LFI Delta DX9 / HFI DX9 10deg"
+release_name = "Elina's test" 
 
 try:
     os.mkdir(out_folder + "images/spectra")

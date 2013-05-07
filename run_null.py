@@ -74,7 +74,7 @@ if config.getboolean("run", "run_surveydiff"):
     for bp_corr in [False, True]:
         for freq in freqs:
             chtags = [""]
-            #chtags = []; log.warning("Disabled full freq")
+            chtags = []; log.warning("Disabled full freq")
             if freq == 70:
                 chtags += ["18_23", "19_22", "20_21"]
             #log.warning("Disabled quadruplets")

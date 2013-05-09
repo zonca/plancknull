@@ -45,7 +45,7 @@ Change colors threshold:
     {% for row in summary_table.rows %}
         <tr>
         {% if row.tag %}
-            <th><p>{{row.tag}}</p></th>
+        <th><p><a href="#{{row.tag.split|join:"_"}}">{{row.tag}}</a></p></th>
         {% endif %}
         {% for numlink in row.numslinks %}
             <td>
@@ -80,7 +80,7 @@ Change colors threshold:
 
 
 {% for table in table_list %}
-    <a name="{{ table.tag }}"><h2>{{ table.title }}</h2></a>
+<a href="#{{table.tag}}" name="{{ table.tag }}"><h2>{{ table.title }}</h2></a>
     <table class="table table-hover table-condensed mapstable">
     <tr>
         {% if table.rows.0.tag %}

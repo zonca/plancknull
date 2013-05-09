@@ -46,7 +46,10 @@ freqspol = [30, 44, 70, 100, 143, 217, 353]
 freqs = [30, 70]
 freqspol = [30, 70]
 
-menu = [{"title":"Halfrings", "file":"index.html",
+menu = [
+        {"title":release_name, "file":"index.html",
+"links" : []}, 
+        {"title":"Halfrings", "file":"index.html",
 "links" : [("%d" % freq, "%dGHz" % freq) for freq in freqs]}]
 #"links" : []}]
 

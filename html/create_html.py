@@ -43,8 +43,8 @@ print "MENU"
 
 freqs = [30, 44, 70, 100, 143, 217, 353, 545, 857]
 freqspol = [30, 44, 70, 100, 143, 217, 353]
-freqs = [70]
-freqspol = [70]
+freqs = [30, 70]
+freqspol = [30, 70]
 
 menu = [{"title":"Halfrings", "file":"index.html",
 "links" : [("%d" % freq, "%dGHz" % freq) for freq in freqs]}]
@@ -58,13 +58,13 @@ for comp in "IQU":
         menu_item["links"] = [("%d_%s" % (freq, comp), "%dGHz %s" % (freq, comp))  for freq in freqspol]
     menu.append(menu_item)
 
-#menu_item = {"title":"Horn Diff", "file":"horndiff.html"}
-#menu_item["links"] = [("%d_SS1" % freq, "%dGHz" % freq) for freq in [30, 44, 70]]
-#menu.append(menu_item)
-#
-#menu_item = {"title":"Spectra", "file":"spectra.html"}
-#menu_item["links"] = [("%d_%s" % (freq, comp), "%dGHz %s" % (freq, comp)) for comp in "TE" for freq in freqs]
-#menu.append(menu_item)
+menu_item = {"title":"Horn Diff", "file":"horndiff.html"}
+menu_item["links"] = [("%d_SS1" % freq, "%dGHz" % freq) for freq in freqs]
+menu.append(menu_item)
+
+menu_item = {"title":"Spectra", "file":"spectra.html"}
+menu_item["links"] = [("%d_%s" % (freq, comp), "%dGHz %s" % (freq, comp)) for comp in "TE" for freq in freqs]
+menu.append(menu_item)
 
 try:
     settings.configure(TEMPLATE_DEBUG=True, TEMPLATE_DIRS=("templates/",))
@@ -78,8 +78,8 @@ table_list = []
 summary_table = {"labels":[], "rows":[], "labels_done":False}
 for freq in freqs:
     chtags = [""]
-    if freq == 70:
-        chtags += ["18_23", "19_22", "20_21"]
+    #if freq == 70:
+    #    chtags += ["18_23", "19_22", "20_21"]
     for ch in chtags:
         if ch:
             chtag = ch
@@ -163,6 +163,7 @@ for comp in "IQU":
                     pass
                 else:
                     try:
+                        print ch
                         if ch:
                             chtag = ch
                         else:
@@ -234,7 +235,7 @@ for comp in "TE":
             if ch or freq>70:
                 bp_corrs = [False]
             else:
-                bp_corrs = [False, True]
+                bp_corrs = [False]
             for bp_corr in bp_corrs:
                 if ch and ch.find("_") < 0 and comp in "QU":
                     pass
@@ -252,28 +253,28 @@ for comp in "TE":
                         table["title"] += " BPCORR"
                     table["rows"] = []
                     summary_row = dict(tag=table["title"], numslinks=[])
-                    for surv in survs[:-1]:
-                        for surv2 in survs[1:]:
-                            if surv2 <= surv:
-                                pass
-                            else:
-                                comb = swap_surv((surv, surv2))
-                                metadata_filename = os.path.join(root_folder, "surveydiff", "%s_SS%d-SS%d%s_cl.json" % (chtag, comb[0], comb[1], bp_tag[bp_corr]))
-                                with open(metadata_filename) as metadata_file:
-                                    metadata=json.load(metadata_file)
-                                spec = hp.read_cl(root_folder + metadata["file_name"])
-                                if isinstance(spec, list):
-                                    spec = spec[cl_comp[comp]]
-                                spec *= 1e12
-                                binspec, binspecerr = bin(spec, 5)
-                                ell, eller = bin(np.arange(len(spec)), 5)
-                                ell = np.arange(len(spec))
-                                binspec = spec
-                                plt.loglog(ell, binspec, label="SS%d-SS%d" % comb, color=colors[i])
-                                i += 1
-
-                    f=os.path.join(root_folder, "halfrings", "%s_SS%s_cl.json" % (chtag, "nominal"))
                     try:
+                        for surv in survs[:-1]:
+                            for surv2 in survs[1:]:
+                                if surv2 <= surv:
+                                    pass
+                                else:
+                                    comb = swap_surv((surv, surv2))
+                                    metadata_filename = os.path.join(root_folder, "surveydiff", "%s_SS%d-SS%d%s_cl.json" % (chtag, comb[0], comb[1], bp_tag[bp_corr]))
+                                    with open(metadata_filename) as metadata_file:
+                                        metadata=json.load(metadata_file)
+                                    spec = hp.read_cl(root_folder + metadata["file_name"])
+                                    if isinstance(spec, list):
+                                        spec = spec[cl_comp[comp]]
+                                    spec *= 1e12
+                                    binspec, binspecerr = bin(spec, 5)
+                                    ell, eller = bin(np.arange(len(spec)), 5)
+                                    ell = np.arange(len(spec))
+                                    binspec = spec
+                                    plt.loglog(ell, binspec, label="SS%d-SS%d" % comb, color=colors[i])
+                                    i += 1
+
+                        f=os.path.join(root_folder, "halfrings", "%s_SS%s_cl.json" % (chtag, "nominal"))
                         metadata=json.load(open(f))
                         spec = hp.read_cl(root_folder + metadata["file_name"])
                         if isinstance(spec, list):
@@ -293,27 +294,27 @@ for comp in "TE":
                             whitenoise_cl_field += '_P'
 
                         plt.loglog(ell, np.ones_like(ell) * metadata[whitenoise_cl_field]*1e12, 'k--', label="variance")
+                        #print metadata[whitenoise_cl_field]*1e12
+                        plt.ylim([1e-3, 1])
+                        leg = plt.legend(loc=0, prop={"size":9})
+                        leg.legendPatch.set_alpha(0.5)
+                        plt.grid()
+                        plt.title(table["title"])
+                        plt.xlim([0, 2048])
+                        plt.xlabel("ell"); plt.ylabel("C_ell [microK^2]")
+                        out_filename = "spectra/cl_%s_%s" % (chtag, comp)
+                        if bp_corr:
+                            out_filename += "_bpcorr"
+                        plt.savefig(out_folder + "/images/" + out_filename + "_thumb.jpg")
+                        print out_filename
+                        row = {"tag":"", "images":[]}
+                        row["images"].append({"file_name":out_filename,
+                            "tag" : metadata["base_file_name"].replace("/","_")+ "_%s" % comp,
+                                        })
+                        table["rows"] = [row]
+                        table_list.append(table)
                     except exceptions.IOError as e:
                         print "SKIP: " + str(e)
-                    #print metadata[whitenoise_cl_field]*1e12
-                    plt.ylim([1e-3, 1])
-                    leg = plt.legend(loc=0, prop={"size":9})
-                    leg.legendPatch.set_alpha(0.5)
-                    plt.grid()
-                    plt.title(table["title"])
-                    plt.xlim([0, 2048])
-                    plt.xlabel("ell"); plt.ylabel("C_ell [microK^2]")
-                    out_filename = "spectra/cl_%s_%s" % (chtag, comp)
-                    if bp_corr:
-                        out_filename += "_bpcorr"
-                    plt.savefig(out_folder + "/images/" + out_filename + "_thumb.jpg")
-                    print out_filename
-                    row = {"tag":"", "images":[]}
-                    row["images"].append({"file_name":out_filename,
-                        "tag" : metadata["base_file_name"].replace("/","_")+ "_%s" % comp,
-                                    })
-                    table["rows"] = [row]
-                    table_list.append(table)
 
 t = loader.get_template(template_name="page.html")
 c = Context({
@@ -326,7 +327,6 @@ write_html("spectra.html", t, c)
 
 print "CHDIFF"
 survs = [1,2,3,4,5]
-freqs = [30, 44, 70]
     
 table_list = []
 summary_tables = []

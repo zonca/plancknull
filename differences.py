@@ -81,14 +81,12 @@ def smooth_combine(maps_and_weights, variance_maps_and_weights=None, fwhm=np.rad
         assert hp.isnpixok(len(maps_and_weights[0][0])), "Input maps must have either 1 or 3 components"
 
     combined_map = combine_maps(maps_and_weights)
-    all_maps = combined_map
+    for m in combined_map:
+        m.mask |= smooth_mask
     if not variance_maps_and_weights is None:
         combined_variance_map = combine_maps(variance_maps_and_weights)
-        all_maps += combined_variance_map
-
-    # apply mask
-    for m in all_maps:
-        m.mask |= smooth_mask
+        for m in combined_variance_map:
+            m.mask |= smooth_mask
 
     monopole_I, dipole_I = hp.fit_dipole(combined_map[0], gal_cut=30)
     # remove monopole, only I

@@ -71,10 +71,10 @@ if config.getboolean("run", "run_halfrings"):
 if config.getboolean("run", "run_surveydiff"):
     print "SURVDIFF"
     survs = [1,2,3,4,5]
-    for bp_corr in [False, True]:
+    for bp_corr in [False]:
         for freq in freqs:
             chtags = [""]
-            chtags = []; log.warning("Disabled full freq")
+            #chtags = []; log.warning("Disabled full freq")
             if freq == 70:
                 chtags += ["18_23", "19_22", "20_21"]
             #log.warning("Disabled quadruplets")
@@ -129,4 +129,4 @@ if config.getboolean("run", "run_chdiff"):
 
 if paral:
     print("Wait for %d tasks to complete" % len(tasks))
-    #tc.wait(tasks)
+    tc.wait(tasks)

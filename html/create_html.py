@@ -12,9 +12,9 @@ cm = plt.get_cmap('jet')
 num_colors = 11
 colors = [cm(float(i)/num_colors) for i in range(num_colors) ]
 
-root_folder = "../ecn512s/"
+root_folder = "../pre_dx10_rad_10deg/"
 out_folder = "../dx9null/"
-release_name = "Elina's test" 
+release_name = "Pre-DX10 RAD 10deg"
 
 try:
     os.mkdir(out_folder + "images/spectra")
@@ -43,9 +43,12 @@ print "MENU"
 
 freqs = [30, 44, 70, 100, 143, 217, 353, 545, 857]
 freqspol = [30, 44, 70, 100, 143, 217, 353]
+freqs = [70]
+freqspol = [70]
 
 menu = [{"title":"Halfrings", "file":"index.html",
 "links" : [("%d" % freq, "%dGHz" % freq) for freq in freqs]}]
+#"links" : []}]
 
 for comp in "IQU":
     menu_item = {"title":"Surv Diff %s" % comp, "file":"surveydiff_%s.html" % comp}
@@ -55,13 +58,13 @@ for comp in "IQU":
         menu_item["links"] = [("%d_%s" % (freq, comp), "%dGHz %s" % (freq, comp))  for freq in freqspol]
     menu.append(menu_item)
 
-menu_item = {"title":"Horn Diff", "file":"horndiff.html"}
-menu_item["links"] = [("%d_SS1" % freq, "%dGHz" % freq) for freq in [30, 44, 70]]
-menu.append(menu_item)
-
-menu_item = {"title":"Spectra", "file":"spectra.html"}
-menu_item["links"] = [("%d_%s" % (freq, comp), "%dGHz %s" % (freq, comp)) for comp in "TE" for freq in freqs]
-menu.append(menu_item)
+#menu_item = {"title":"Horn Diff", "file":"horndiff.html"}
+#menu_item["links"] = [("%d_SS1" % freq, "%dGHz" % freq) for freq in [30, 44, 70]]
+#menu.append(menu_item)
+#
+#menu_item = {"title":"Spectra", "file":"spectra.html"}
+#menu_item["links"] = [("%d_%s" % (freq, comp), "%dGHz %s" % (freq, comp)) for comp in "TE" for freq in freqs]
+#menu.append(menu_item)
 
 try:
     settings.configure(TEMPLATE_DEBUG=True, TEMPLATE_DIRS=("templates/",))
@@ -89,26 +92,32 @@ for freq in freqs:
             row = {"images":[]}
             f=os.path.join(root_folder, "halfrings", "%s_SS%s_map.json" % (chtag, str(surv)))
             print(f)
-            with open(f) as openfile:
-                metadata = json.load(openfile)
-            for comp in "IQU":
-                if comp in "QU" and freq > 500:
-                    pass
-                else:
-                    row["images"].append({ "title":metadata["title"] + " %s" % comp, 
-                        "file_name" : metadata["base_file_name"] + "_map_%s" % comp,
-                        "tag" : metadata["base_file_name"].replace("/","_") + "_%s" % comp,
-                        })
-                    if not summary_table["labels_done"]:
-                        summary_table["labels"].append(comp)
-                    try:
-                        summary_row["numslinks"].append(("%.2f" % (metadata["map_chi2_%s" % comp]), row["images"][-1]["file_name"]))
-                    except exceptions.KeyError:
-                        summary_row["numslinks"].append(("%.2f" % (metadata["map_chi2"]),row["images"][-1]["file_name"] ))
-            table["rows"].append(row)
-            table_list.append(table)
-            summary_table["labels_done"] = True
-            summary_table["rows"].append(summary_row)
+            try:
+                with open(f) as openfile:
+                    metadata = json.load(openfile)
+                for comp in "IQU":
+                    if comp in "QU" and freq > 500:
+                        pass
+                    else:
+                        row["images"].append({ "title":metadata["title"] + " %s" % comp, 
+                            "file_name" : metadata["base_file_name"] + "_map_%s" % comp,
+                            "tag" : metadata["base_file_name"].replace("/","_") + "_%s" % comp,
+                            })
+                        if not summary_table["labels_done"]:
+                            summary_table["labels"].append(comp)
+                        try:
+                            try:
+                                summary_row["numslinks"].append(("%.2f" % (metadata["map_chi2_%s" % comp]), row["images"][-1]["file_name"]))
+                            except exceptions.KeyError:
+                                summary_row["numslinks"].append(("%.2f" % (metadata["map_chi2"]),row["images"][-1]["file_name"] ))
+                        except exceptions.KeyError:
+                            print "Missing chi2"
+                table["rows"].append(row)
+                table_list.append(table)
+                summary_table["labels_done"] = True
+                summary_table["rows"].append(summary_row)
+            except exceptions.IOError:
+                print "MISSING " + f
 
 
 t = loader.get_template(template_name="page.html")
@@ -180,9 +189,12 @@ for comp in "IQU":
                             "tag" : metadata["base_file_name"].replace("/","_")+ "_%s" % comp,
                                         })
                                     try:
-                                        summary_row["numslinks"].append(("%.2f" % (metadata["map_chi2_%s" % comp]), row["images"][-1]["file_name"]))
+                                        try:
+                                            summary_row["numslinks"].append(("%.2f" % (metadata["map_chi2_%s" % comp]), row["images"][-1]["file_name"]))
+                                        except exceptions.KeyError:
+                                            summary_row["numslinks"].append(("%.2f" % (metadata["map_chi2"]),row["images"][-1]["file_name"] ))
                                     except exceptions.KeyError:
-                                        summary_row["numslinks"].append(("%.2f" % (metadata["map_chi2"]),row["images"][-1]["file_name"] ))
+                                        print "Missing chi2"
 
                             table["rows"].append(row)
                         table_list.append(table)

@@ -11,7 +11,7 @@ import utils
 import sys
 
 if len(sys.argv) < 2:
-    print "Launch script as: python run_null.py run_*.conf"
+    print "Launch script as: python run_null.py ,6,7run_*.conf"
     sys.exit(1)
 
 #read configuration
@@ -33,6 +33,8 @@ log.root.level = log.DEBUG
 mapreader = reader.DXReader(config.get("run", "reader_conf"), nside=config.getint("smooth_combine", "nside"))
 smooth_combine_config = dict(fwhm=np.radians(config.getfloat("smooth_combine", "smoothing")), degraded_nside=config.getint("smooth_combine", "degraded_nside"), spectra=config.getboolean("smooth_combine", "spectra"), chi2=config.getboolean("smooth_combine", "chi2"))
 
+survs = [1,2,3,4,5,6,7]
+
 if paral:
     tasks = []
     tc = Client()
@@ -43,7 +45,7 @@ freqs = json.loads(config.get("run", "frequency"))
 
 if config.getboolean("run", "run_halfrings"):
     print "HALFRINGS"
-    survs = ["nominal", "full"]
+    halfrings_survs = ["nominal", "full"]
     for freq in freqs:
         chtags = [""]
         pol = "IQU"
@@ -52,7 +54,7 @@ if config.getboolean("run", "run_halfrings"):
         if freq >= 545:
             pol = "I"
         for chtag in chtags:
-            for surv in survs:
+            for surv in halfrings_survs:
                 if paral:
                     tasks.append(lview.apply_async(halfrings,freq, chtag,
                                                    surv, pol=pol,
@@ -70,7 +72,6 @@ if config.getboolean("run", "run_halfrings"):
 
 if config.getboolean("run", "run_surveydiff"):
     print "SURVDIFF"
-    survs = [1,2,3,4,5]
     for bp_corr in [False]:
         for freq in freqs:
             chtags = [""]
@@ -104,7 +105,6 @@ if config.getboolean("run", "run_surveydiff"):
 
 if config.getboolean("run", "run_chdiff"):
     print "CHDIFF"
-    survs = [1,2,3,4,5]
         
     for freq in freqs:
         for surv in survs:

@@ -12,9 +12,9 @@ cm = plt.get_cmap('jet')
 num_colors = 11
 colors = [cm(float(i)/num_colors) for i in range(num_colors) ]
 
-root_folder = "../pre_dx10_rad_10deg/"
+root_folder = "../pre_dx10_3_10deg/"
 out_folder = "../dx9null/"
-release_name = "Pre-DX10 RAD 10deg"
+release_name = "Pre-DX10 3 (DaCapo-hybbeam) 10deg"
 
 try:
     os.mkdir(out_folder + "images/spectra")

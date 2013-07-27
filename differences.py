@@ -168,7 +168,7 @@ def smooth_combine(maps_and_weights, variance_maps_and_weights=None, fwhm=np.rad
     if spectra:
         metadata["sky_fraction"] = sky_frac
         with open(os.path.join(root_folder, base_filename + "_cl.json"), 'w') as f:
-            json.dump(metadata, f)
+            json.dump(metadata, f, indent=4)
 
     metadata["file_name"] = base_filename + "_map.fits"
     metadata["file_type"] = metadata["file_type"].replace("_cl","_map")
@@ -184,7 +184,7 @@ def smooth_combine(maps_and_weights, variance_maps_and_weights=None, fwhm=np.rad
         metadata["map_std_I"] = smoothed_map.std()
 
     with open(os.path.join(root_folder, base_filename + "_map.json"), 'w') as f:
-        json.dump(metadata, f)
+        json.dump(metadata, f, indent=4)
 
 
 def halfrings(freq, ch, surv, pol='I', smooth_combine_config=None, root_folder="out/",log_to_file=False, mapreader=None):

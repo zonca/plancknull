@@ -9,12 +9,12 @@ import matplotlib.pyplot as plt
 import exceptions
 
 cm = plt.get_cmap('jet')
-num_colors = 11
+num_colors = 28
 colors = [cm(float(i)/num_colors) for i in range(num_colors) ]
 
-root_folder = "../pre_dx10_3_10deg/"
+root_folder = "../dx10_10deg/"
 out_folder = "../dx9null/"
-release_name = "Pre-DX10 3 (DaCapo-hybbeam) 10deg"
+release_name = "DX10 10deg"
 
 try:
     os.mkdir(out_folder + "images/spectra")
@@ -43,8 +43,8 @@ print "MENU"
 
 freqs = [30, 44, 70, 100, 143, 217, 353, 545, 857]
 freqspol = [30, 44, 70, 100, 143, 217, 353]
-freqs = [30, 70]
-freqspol = [30, 70]
+freqs = [30, 44, 70]
+freqspol = [30, 44, 70]
 
 menu = [
         {"title":release_name, "file":"index.html",
@@ -218,7 +218,6 @@ for comp in "IQU":
     write_html("surveydiff_%s.html" % comp, t, c)
 
 bp_tag = {True:"_bpcorr", False:''}
-survs = [1,2,3,4,5]
 
 cl_comp = {"T":0, "E":1, "B":2}
 table_list = []
@@ -232,8 +231,8 @@ for comp in "TE":
         chtags = [""]
         if freq == 70:
             chtags += ["18_23", "19_22", "20_21"]
-        if freq < 100:
-            chtags += chlist(freq)
+        #if freq < 100:
+        #    chtags += chlist(freq)
         for ch in chtags:
             if ch or freq>70:
                 bp_corrs = [False]
@@ -266,7 +265,8 @@ for comp in "TE":
                                     metadata_filename = os.path.join(root_folder, "surveydiff", "%s_SS%d-SS%d%s_cl.json" % (chtag, comb[0], comb[1], bp_tag[bp_corr]))
                                     with open(metadata_filename) as metadata_file:
                                         metadata=json.load(metadata_file)
-                                    spec = hp.read_cl(root_folder + metadata["file_name"])
+                                    with open(root_folder + metadata["file_name"],"rb") as openf:
+                                        spec = hp.read_cl(openf)
                                     if isinstance(spec, list):
                                         spec = spec[cl_comp[comp]]
                                     spec *= 1e12
@@ -277,9 +277,11 @@ for comp in "TE":
                                     plt.loglog(ell, binspec, label="SS%d-SS%d" % comb, color=colors[i])
                                     i += 1
 
-                        f=os.path.join(root_folder, "halfrings", "%s_SS%s_cl.json" % (chtag, "nominal"))
-                        metadata=json.load(open(f))
-                        spec = hp.read_cl(root_folder + metadata["file_name"])
+                        f=os.path.join(root_folder, "halfrings", "%s_SS%s_cl.json" % (chtag, "full"))
+                        with open(f) as openf:
+                            metadata=json.load(openf)
+                        with open(root_folder + metadata["file_name"], "rb") as openf:
+                            spec = hp.read_cl(openf)
                         if isinstance(spec, list):
                             spec = spec[cl_comp[comp]]
                         spec *= 1e12
@@ -287,7 +289,7 @@ for comp in "TE":
                         ell, eller = bin(np.arange(len(spec)), 5)
                         ell = np.arange(len(spec))
                         binspec = spec
-                        plt.loglog(ell, binspec, label="nom half", color=colors[i])
+                        plt.loglog(ell, binspec, label="full half", color=colors[i])
                         #wmap = np.loadtxt("wmap_binned_%s_spectrum_7yr_v4p1.txt" % tag.lower())
                         #wmap_ell = wmap[:,0]
                         #wmap_spec = wmap[:,1] / (wmap_ell * (wmap_ell + 1) / (2*np.pi))
@@ -351,7 +353,8 @@ for freq in freqs:
                         comb = (horn, horn2)
                         if not summary_table["labels_done"]:
                             summary_table["labels"].append("%s-%s" % tuple(map(str, comb)))
-                        metadata=json.load(open(os.path.join(root_folder, "chdiff", "%s-%s_SS%s_map.json" % (comb[0], comb[1], str(surv)))))
+                        with open(os.path.join(root_folder, "chdiff", "%s-%s_SS%s_map.json" % (comb[0], comb[1], str(surv)))) as openf:
+                            metadata=json.load(openf)
                         row["images"].append({"file_name":metadata["base_file_name"] + "_map_I", "title":metadata["title"], 
                         "tag" : metadata["base_file_name"].replace("/","_"),
                             })

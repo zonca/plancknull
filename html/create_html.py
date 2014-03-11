@@ -12,9 +12,9 @@ cm = plt.get_cmap('jet')
 num_colors = 28
 colors = [cm(float(i)/num_colors) for i in range(num_colors) ]
 
-root_folder = "../dx10_10deg/"
+root_folder = "../osgtv_10deg_dstfull/"
 out_folder = "../dx9null/"
-release_name = "DX10 10deg"
+release_name = "OSGTV (DX10D) calibration with full mission destriping 10deg"
 
 try:
     os.mkdir(out_folder + "images/spectra")
@@ -48,26 +48,27 @@ freqspol = [30, 44, 70]
 
 menu = [
         {"title":release_name, "file":"index.html",
-"links" : []}, 
-        {"title":"Halfrings", "file":"index.html",
-"links" : [("%d" % freq, "%dGHz" % freq) for freq in freqs]}]
+"links" : []} ]
+#        {"title":"Halfrings", "file":"index.html",
+#"links" : [("%d" % freq, "%dGHz" % freq) for freq in freqs]}
 #"links" : []}]
 
-for comp in "IQU":
-    menu_item = {"title":"Surv Diff %s" % comp, "file":"surveydiff_%s.html" % comp}
-    if comp == "I":
-        menu_item["links"] = [("%d_%s" % (freq, comp), "%dGHz %s" % (freq, comp))  for freq in freqs]
-    else:
-        menu_item["links"] = [("%d_%s" % (freq, comp), "%dGHz %s" % (freq, comp))  for freq in freqspol]
-    menu.append(menu_item)
-
-menu_item = {"title":"Horn Diff", "file":"horndiff.html"}
-menu_item["links"] = [("%d_SS1" % freq, "%dGHz" % freq) for freq in freqs]
-menu.append(menu_item)
-
-menu_item = {"title":"Spectra", "file":"spectra.html"}
-menu_item["links"] = [("%d_%s" % (freq, comp), "%dGHz %s" % (freq, comp)) for comp in "TE" for freq in freqs]
-menu.append(menu_item)
+##for comp in "IQU":
+#for comp in "I":
+#    menu_item = {"title":"Surv Diff %s" % comp, "file":"surveydiff_%s.html" % comp}
+#    if comp == "I":
+#        menu_item["links"] = [("%d_%s" % (freq, comp), "%dGHz %s" % (freq, comp))  for freq in freqs]
+#    else:
+#        menu_item["links"] = [("%d_%s" % (freq, comp), "%dGHz %s" % (freq, comp))  for freq in freqspol]
+#    menu.append(menu_item)
+#
+#menu_item = {"title":"Horn Diff", "file":"horndiff.html"}
+#menu_item["links"] = [("%d_SS1" % freq, "%dGHz" % freq) for freq in freqs]
+#menu.append(menu_item)
+#
+#menu_item = {"title":"Spectra", "file":"spectra.html"}
+#menu_item["links"] = [("%d_%s" % (freq, comp#), "%dGHz %s" % (freq, comp)) for comp in "TE" for freq in freqs]
+#menu.append(menu_item)
 
 try:
     settings.configure(TEMPLATE_DEBUG=True, TEMPLATE_DIRS=("templates/",))
@@ -142,8 +143,9 @@ def swap_surv(comb):
         return comb
 
 bp_tag = {True:"_bpcorr", False:''}
-survs = [1,2,3,4,5]
-for comp in "IQU":
+survs = [1,2,3,4,5,6,7]
+#for comp in "IQU":
+for comp in "I":
     table_list = []
     summary_table = {"labels":[], "rows":[], "labels_done":False}
     if comp == "I":
@@ -211,11 +213,12 @@ for comp in "IQU":
     c = Context({
         'page_title': release_name + ':Survey differences %s' % comp,
                 'table_list': table_list,
-                'summary_tables': [summary_table],
+                'summary_tables': [None],
                 'menu':menu
                 })
 
-    write_html("surveydiff_%s.html" % comp, t, c)
+    #write_html("surveydiff_%s.html" % comp, t, c)
+    write_html("index.html", t, c)
 
 bp_tag = {True:"_bpcorr", False:''}
 
@@ -330,53 +333,53 @@ c = Context({
 
 write_html("spectra.html", t, c)
 
-print "CHDIFF"
-survs = [1,2,3,4,5]
-    
-table_list = []
-summary_tables = []
-for freq in freqs:
-    summary_table = {"tag":freq, "labels":[], "rows":[], "labels_done":False}
-    for surv in survs:
-        horns = ["LFI%d" % h for h in HORNS[freq]]
-        table = {"title":"%dGHz SS%s" % (freq, str(surv)), "tag":"%d_SS%s" % (freq, str(surv)), "labels":map(str, horns[1:])}
-        table["rows"] = []
-        summary_row = dict(tag=table["title"], numslinks=[])
-        try:
-            for hornn, horn in enumerate(horns[:-1]):
-                row = {"tag":str(horn), "images":[]}
-                for horn2n, horn2 in enumerate(horns[1:]):
-                    horn2n += 1
-                    if horn2n <= hornn:
-                        row["images"].append(None)
-                    else:
-                        comb = (horn, horn2)
-                        if not summary_table["labels_done"]:
-                            summary_table["labels"].append("%s-%s" % tuple(map(str, comb)))
-                        with open(os.path.join(root_folder, "chdiff", "%s-%s_SS%s_map.json" % (comb[0], comb[1], str(surv)))) as openf:
-                            metadata=json.load(openf)
-                        row["images"].append({"file_name":metadata["base_file_name"] + "_map_I", "title":metadata["title"], 
-                        "tag" : metadata["base_file_name"].replace("/","_"),
-                            })
-                        try:
-                            summary_row["numslinks"].append(("%.2f" % (metadata["map_chi2_%s" % comp]), row["images"][-1]["file_name"]))
-                        except exceptions.KeyError:
-                            summary_row["numslinks"].append(("%.2f" % (metadata["map_chi2"]),row["images"][-1]["file_name"] ))
-                table["rows"].append(row)
-            table_list.append(table)
-            summary_table["rows"].append(summary_row)
-        except exceptions.IOError as e:
-            print "SKIP: " + str(e)
-        summary_table["labels_done"] = True
-    summary_tables.append(summary_table)
-
-t = loader.get_template(template_name="page.html")
-c = Context({
-        'page_title': release_name + ':Horn differences',
-            'table_list': table_list ,
-            'summary_tables': summary_tables,
-            'menu':menu
-
-            })
-
-write_html("horndiff.html", t, c)
+#print "CHDIFF"
+#survs = [1,2,3,4,5]
+#    
+#table_list = []
+#summary_tables = []
+#for freq in freqs:
+#    summary_table = {"tag":freq, "labels":[], "rows":[], "labels_done":False}
+#    for surv in survs:
+#        horns = ["LFI%d" % h for h in HORNS[freq]]
+#        table = {"title":"%dGHz SS%s" % (freq, str(surv)), "tag":"%d_SS%s" % (freq, str(surv)), "labels":map(str, horns[1:])}
+#        table["rows"] = []
+#        summary_row = dict(tag=table["title"], numslinks=[])
+#        try:
+#            for hornn, horn in enumerate(horns[:-1]):
+#                row = {"tag":str(horn), "images":[]}
+#                for horn2n, horn2 in enumerate(horns[1:]):
+#                    horn2n += 1
+#                    if horn2n <= hornn:
+#                        row["images"].append(None)
+#                    else:
+#                        comb = (horn, horn2)
+#                        if not summary_table["labels_done"]:
+#                            summary_table["labels"].append("%s-%s" % tuple(map(str, comb)))
+#                        with open(os.path.join(root_folder, "chdiff", "%s-%s_SS%s_map.json" % (comb[0], comb[1], str(surv)))) as openf:
+#                            metadata=json.load(openf)
+#                        row["images"].append({"file_name":metadata["base_file_name"] + "_map_I", "title":metadata["title"], 
+#                        "tag" : metadata["base_file_name"].replace("/","_"),
+#                            })
+#                        try:
+#                            summary_row["numslinks"].append(("%.2f" % (metadata["map_chi2_%s" % comp]), row["images"][-1]["file_name"]))
+#                        except exceptions.KeyError:
+#                            summary_row["numslinks"].append(("%.2f" % (metadata["map_chi2"]),row["images"][-1]["file_name"] ))
+#                table["rows"].append(row)
+#            table_list.append(table)
+#            summary_table["rows"].append(summary_row)
+#        except exceptions.IOError as e:
+#            print "SKIP: " + str(e)
+#        summary_table["labels_done"] = True
+#    summary_tables.append(summary_table)
+#
+#t = loader.get_template(template_name="page.html")
+#c = Context({
+#        'page_title': release_name + ':Horn differences',
+#            'table_list': table_list ,
+#            'summary_tables': summary_tables,
+#            'menu':menu
+#
+#            })
+#
+#write_html("horndiff.html", t, c)

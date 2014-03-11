@@ -9,7 +9,7 @@ sys.path.append("..")
 
 import healpy as hp
 
-root_folder = "../dx10_10deg/"
+root_folder = "../osgtv_10deg_dstfull/"
 out_folder = "../dx9null/images"
 
 try:

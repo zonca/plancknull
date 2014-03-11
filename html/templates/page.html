@@ -15,6 +15,7 @@
     <li> ploted on linear scale on +- 20 microK</li>
 </ul>
 
+{% if summary_tables.0 %}
 <a name="summary"><h2>Summary table</h2></a>
 
 <p>Difference map (after smoothing) chi-square, click on the table cell to popup the map <br />
@@ -32,6 +33,7 @@ Change colors threshold:
     <li> variance smoothed according to J.P. Leahy algorithm, implementation <a href="https://github.com/zonca/plancknull/blob/master/utils.py">on Github</a></li>
     <li> taking the average of all the unmasked pixels </li>
 </ul>
+{% endif %}
 {% for summary_table in summary_tables %}
 <table class="table table-hover table-condensed summarytable">
     <tr>

@@ -30,10 +30,11 @@ if paral:
 log.root.level = log.DEBUG
 
 # create map reader
-mapreader = reader.DXReader(config.get("run", "reader_conf"), nside=config.getint("smooth_combine", "nside"))
+mapreader = reader.DXReader(config.get("run", "reader_conf"), nside=config.getint("smooth_combine", "nside"), debug=config.getboolean("run", "debug"))
 smooth_combine_config = dict(fwhm=np.radians(config.getfloat("smooth_combine", "smoothing")), degraded_nside=config.getint("smooth_combine", "degraded_nside"), spectra=config.getboolean("smooth_combine", "spectra"), chi2=config.getboolean("smooth_combine", "chi2"))
 
-survs = [1,2,3,4,5,6,7]
+survs = [1,2,3,4,5,6,7,8,9]
+survs = [2,3,4,5,6,7,8]
 
 if paral:
     tasks = []
@@ -45,7 +46,7 @@ freqs = json.loads(config.get("run", "frequency"))
 
 if config.getboolean("run", "run_halfrings"):
     print "HALFRINGS"
-    halfrings_survs = ["nominal", "full"]
+    halfrings_survs = ["full"]
     for freq in freqs:
         chtags = [""]
         pol = "IQU"

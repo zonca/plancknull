@@ -152,8 +152,10 @@ class DXReader(BaseMapReader):
             if not self.debug:
                 output_map.append(hp.ma(hp.read_map(filename, components)))
             else:
+                if not os.path.exists(filename):
+                    raise exceptions.ValueError("Map missing: " + filename)
                 output_map.append(
-                    np.zeros((np.size(components), hp.nside2npix(1024)))
+                    hp.ma(np.zeros((np.size(components), hp.nside2npix(1024))))
                                  )
         if bp_corr:
             bp_corr_file_template = "map_iqucorrection"
@@ -164,7 +166,7 @@ class DXReader(BaseMapReader):
             if not self.debug:
                 corr_map = hp.ma(hp.read_map(bp_corr_filename, (0,1,2)))
             else:
-                corr_map = [np.zeros(hp.nside2npix(1024)) for c in [0,1,2]]
+                corr_map = hp.ma([np.zeros(hp.nside2npix(1024)) for c in [0,1,2]])
             for comp, corr in zip(output_map[0], corr_map):
                 comp += corr
 

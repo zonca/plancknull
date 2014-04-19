@@ -140,13 +140,15 @@ def smooth_combine(maps_and_weights, variance_maps_and_weights=None, fwhm=np.rad
         log.debug("Smooth Variance")
         if is_IQU:
             smoothed_variance_map = [utils.smooth_variance_map(var, fwhm=fwhm) for var in combined_variance_map]
-            for comp,m,var in zip("IQU", smoothed_map, smoothed_variance_map):
+            for comp,m,var,galmask in zip("IQU", smoothed_map, smoothed_variance_map, spectra_mask):
                  metadata["map_chi2_%s" % comp] = np.mean(m**2 / var) 
+                 metadata["map_chi2_galmask_%s" % comp] = np.mean((m**2 / var)[galmask==0]) 
             for comp,m,var in zip("IQU", combined_map, combined_variance_map):
                  metadata["map_unsm_chi2_%s" % comp] = np.mean(m**2 / var) 
         else:
             smoothed_variance_map = utils.smooth_variance_map(combined_variance_map[0], fwhm=fwhm)
             metadata["map_chi2"] = np.mean(smoothed_map**2 / smoothed_variance_map) 
+            metadata["map_chi2_galmask"] = np.mean((smoothed_map**2 / smoothed_variance_map)[spectra_mask==0]) 
             metadata["map_unsm_chi2"] = np.mean(combined_map[0]**2 / combined_variance_map[0]) 
 
         del smoothed_variance_map

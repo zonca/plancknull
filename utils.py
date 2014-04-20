@@ -57,7 +57,7 @@ def smooth_variance_map(var_m, fwhm):
 
     # smooth map
     fwhm_variance = fwhm / np.sqrt(2)
-    smoothed_var_m = hp.smoothing(var_m, fwhm=fwhm_variance)
+    smoothed_var_m = hp.smoothing(var_m, fwhm=fwhm_variance, regression=False)
 
     # normalization factor
     pix_area = hp.nside2pixarea(hp.npix2nside(len(var_m)))

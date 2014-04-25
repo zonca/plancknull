@@ -41,7 +41,7 @@ def combine_maps(maps_and_weights):
 
     return combined_map
 
-def smooth_combine(maps_and_weights, variance_maps_and_weights=None, fwhm=np.radians(2.0), degraded_nside=32, spectra=False, smooth_mask=False, spectra_mask=False, base_filename="out", root_folder=".", metadata={}, chi2=False):
+def smooth_combine(maps_and_weights, variance_maps_and_weights=None, fwhm=np.radians(2.0), degraded_nside=32, spectra=False, smooth_mask=False, spectra_mask=False, galaxy_mask=False, base_filename="out", root_folder=".", metadata={}, chi2=False):
     """Combine, smooth, take-spectra, write metadata
 
     The maps (I or IQU) are first combined with their own weights, then smoothed and degraded.
@@ -92,9 +92,10 @@ def smooth_combine(maps_and_weights, variance_maps_and_weights=None, fwhm=np.rad
     # remove monopole, only I
     combined_map[0] -= monopole_I
 
+    # save original masks
+    orig_mask = [m.mask.copy() for m in combined_map] 
+
     if spectra:
-        # save original masks
-        orig_mask = [m.mask.copy() for m in combined_map] 
 
         # spectra
         log.debug("Anafast")
@@ -127,10 +128,10 @@ def smooth_combine(maps_and_weights, variance_maps_and_weights=None, fwhm=np.rad
                 # /2. is the mean, /4. is the half difference in power
                 metadata["whitenoise_cl_P"] = utils.get_whitenoise_cl((combined_variance_map[1] + combined_variance_map[2])/2./4., mask=combined_map[1].mask | combined_map[2].mask) / sky_frac 
 
-        # restore masks
+        # restore masks 
+        # we need to restore both here and after next smoothing
         for m, mask in zip(combined_map, orig_mask):
             m.mask = mask
-
     # smooth
     log.debug("Smooth")
 
@@ -142,16 +143,34 @@ def smooth_combine(maps_and_weights, variance_maps_and_weights=None, fwhm=np.rad
             smoothed_variance_map = [utils.smooth_variance_map(var, fwhm=fwhm) for var in combined_variance_map]
             for comp,m,var,galmask in zip("IQU", smoothed_map, smoothed_variance_map, spectra_mask):
                  metadata["map_chi2_%s" % comp] = np.mean(m**2 / var) 
-                 metadata["map_chi2_galmask_%s" % comp] = np.mean((m**2 / var)[galmask==0]) 
             for comp,m,var in zip("IQU", combined_map, combined_variance_map):
                  metadata["map_unsm_chi2_%s" % comp] = np.mean(m**2 / var) 
+
+            for m in (combined_map + combined_variance_map):
+                m.mask |= galaxy_mask
+            smoothed_variance_map = [utils.smooth_variance_map(var, fwhm=fwhm) for var in combined_variance_map]
+            smoothed_map_galaxy_mask = hp.smoothing(combined_map, fwhm=fwhm)
+
+            for comp,m,var in zip("IQU", smoothed_map_galaxy_mask, smoothed_variance_map):
+                 metadata["map_chi2_galmask_%s" % comp] = np.mean((m**2 / var)) 
         else:
             smoothed_variance_map = utils.smooth_variance_map(combined_variance_map[0], fwhm=fwhm)
             metadata["map_chi2"] = np.mean(smoothed_map**2 / smoothed_variance_map) 
-            metadata["map_chi2_galmask"] = np.mean((smoothed_map**2 / smoothed_variance_map)[spectra_mask==0]) 
             metadata["map_unsm_chi2"] = np.mean(combined_map[0]**2 / combined_variance_map[0]) 
 
+            for m in (combined_map + combined_variance_map):
+                m.mask |= galaxy_mask
+            smoothed_variance_map = utils.smooth_variance_map(combined_variance_map[0], fwhm=fwhm)
+            smoothed_map_galaxy_mask = hp.smoothing(combined_map[0], fwhm=fwhm)
+
+            metadata["map_chi2_galmask"] = np.mean((smoothed_map_galaxy_mask**2 / smoothed_variance_map))
+
         del smoothed_variance_map
+
+    # restore masks
+    for m, mask in zip(combined_map, orig_mask):
+        m.mask = mask
+
     # removed downgrade of variance
     # smoothed_variance_map = hp.ud_grade(smoothed_variance_map, degraded_nside, power=2)
 
@@ -224,7 +243,7 @@ def halfrings(freq, ch, surv, pol='I', smooth_combine_config=None, root_folder="
     if log_to_file:
         configure_file_logger(os.path.join(root_folder, base_filename))
 
-    ps_mask, gal_mask = mapreader.read_masks(freq)
+    ps_mask, union_mask, gal_mask = mapreader.read_masks(freq)
 
     metadata = dict( 
         file_type="halfring_%s" % (reader.type_of_channel_set(ch),),
@@ -246,7 +265,8 @@ def halfrings(freq, ch, surv, pol='I', smooth_combine_config=None, root_folder="
               metadata=metadata,
               root_folder=root_folder,
               smooth_mask=ps_mask,
-              spectra_mask=gal_mask,
+              spectra_mask=union_mask,
+              galaxy_mask=gal_mask,
             **smooth_combine_config)
     log.info("Completed")
 

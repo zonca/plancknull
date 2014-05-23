@@ -34,7 +34,7 @@ mapreader = reader.DXReader(config.get("run", "reader_conf"), nside=config.getin
 smooth_combine_config = dict(fwhm=np.radians(config.getfloat("smooth_combine", "smoothing")), degraded_nside=config.getint("smooth_combine", "degraded_nside"), spectra=config.getboolean("smooth_combine", "spectra"), chi2=config.getboolean("smooth_combine", "chi2"))
 
 survs = [1,2,3,4,5,6,7,8,9]
-survs = [2,3,4,5,6,7,8]
+survs = [1,2,3,4,5,6,7,8]
 
 if paral:
     tasks = []

@@ -243,7 +243,7 @@ def halfrings(freq, ch, surv, pol='I', smooth_combine_config=None, root_folder="
     if log_to_file:
         configure_file_logger(os.path.join(root_folder, base_filename))
 
-    ps_mask, union_mask, gal_mask = mapreader.read_masks(freq)
+    ps_mask, union_mask, galaxy_mask = mapreader.read_masks(freq)
 
     metadata = dict( 
         file_type="halfring_%s" % (reader.type_of_channel_set(ch),),
@@ -266,7 +266,7 @@ def halfrings(freq, ch, surv, pol='I', smooth_combine_config=None, root_folder="
               root_folder=root_folder,
               smooth_mask=ps_mask,
               spectra_mask=union_mask,
-              galaxy_mask=gal_mask,
+              galaxy_mask=galaxy_mask,
             **smooth_combine_config)
     log.info("Completed")
 
@@ -309,7 +309,7 @@ def surveydiff(freq, ch, survlist=[1,2,3,4,5], pol='I', root_folder="out/", smoo
 
     log.debug("All maps read")
 
-    ps_mask, gal_mask = mapreader.read_masks(freq)
+    ps_mask, union_mask, galaxy_mask = mapreader.read_masks(freq)
 
     log.debug("Metadata")
 
@@ -344,7 +344,10 @@ def surveydiff(freq, ch, survlist=[1,2,3,4,5], pol='I', root_folder="out/", smoo
                 root_folder=root_folder,
                 metadata=dict(metadata.items() + {"surveys": comb}.items()),
               smooth_mask=ps_mask,
-              spectra_mask=gal_mask,
+              spectra_mask=union_mask,
+              galaxy_mask = galaxy_mask,
+
+
                 **smooth_combine_config )
     log.info("Completed")
 
@@ -379,7 +382,7 @@ def chdiff(freq, chlist, surv, pol='I', smooth_combine_config=None, root_folder=
         for var_m in variance_maps.values():
             assert np.all(var_m >= 0)
 
-    ps_mask, gal_mask = mapreader.read_masks(freq)
+    ps_mask, union_mask, galaxy_mask = mapreader.read_masks(freq)
 
     metadata = dict( 
         survey=surv
@@ -401,6 +404,7 @@ def chdiff(freq, chlist, surv, pol='I', smooth_combine_config=None, root_folder=
                 root_folder=root_folder,
                 metadata=metadata,
                 smooth_mask=ps_mask,
-                spectra_mask=gal_mask,
+                spectra_mask=union_mask,
+                galaxy_mask=galaxy_mask,
                 **smooth_combine_config )
     log.info("Completed")

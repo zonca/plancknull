@@ -69,7 +69,7 @@ class DXReader(BaseMapReader):
 
     def read_masks(self, freq):
         result = []
-        filenames = [get_filename(self.config.get("Templates", mask_type).format(frequency=freq)) for mask_type in ["ps_mask", "spectra_mask"]]
+        filenames = [get_filename(self.config.get("Templates", mask_type).format(frequency=freq)) for mask_type in ["ps_mask", "spectra_mask", "galaxy_mask"]]
 
         for file_name in filenames:
             result.append(np.logical_not(np.floor(hp.ud_grade(hp.read_map(file_name), self.nside)).astype(np.bool)))
